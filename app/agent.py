@@ -1,5 +1,6 @@
 import os
 import time
+import json
 from typing import TypedDict, List, Dict, Any
 from langgraph.graph import StateGraph, START, END
 from langchain_core.tools import tool
@@ -13,22 +14,38 @@ class AgentState(TypedDict):
     email: str
     phone: str
     requested_amount: float
-    credit_score: int          # Filled by fetch_credit_score node
-    active_debts: float        # Filled by check_debts node
-    thoughts: List[str]        # Accumulated LLM thoughts/reasoning
-    final_decision: str        # APPROVED / DENIED / PENDING
+    messages: List[Dict[str, Any]]
+    thoughts: List[str]
+    final_decision: str
 
-# 2. Define Mock Tools using the LangChain @tool decorator
+# 2. Define Tools using the LangChain @tool decorator
 @tool
 def get_credit_profile(user_id: str, email: str) -> Dict[str, Any]:
-    """Fetch credit bureau report. Contains simulated PII data and a credit score.
+    """Fetch credit bureau report. Contains credit score and report details.
     """
-    score_map = {
-        "usr_low": 500,   # Will cause Denial
-        "usr_mid": 600,   # Borderline, depends on debts
-        "usr_high": 750,  # Easy Approval
+    db = SessionLocal()
+    try:
+        profile = db.query(ApplicantProfile).filter(ApplicantProfile.user_id == user_id).first()
+        if profile:
+            return {
+                "full_name": "Alice Smith",
+                "email_address": email,
+                "credit_score": profile.credit_score,
+                "report_date": "2026-07-30"
+            }
+    finally:
+        db.close()
+
+    # Fallback to test profile registry if not found in database
+    profiles = {
+        "usr_low": 500,
+        "usr_unemployed": 680,
+        "usr_new_job": 690,
+        "usr_missed_payments": 710,
+        "usr_high_debt": 620,
+        "usr_qualified": 740,
     }
-    score = score_map.get(user_id, 650)
+    score = profiles.get(user_id, 650)
     
     return {
         "full_name": "Alice Smith",
@@ -39,164 +56,316 @@ def get_credit_profile(user_id: str, email: str) -> Dict[str, Any]:
 
 @tool
 def get_active_debts(user_id: str) -> Dict[str, Any]:
-    """Fetch active banking loan/debt profile.
+    """Fetch active banking outstanding loan and monthly debt profile.
     """
-    debt_map = {
-        "usr_low": 8000.0,
-        "usr_mid": 5000.0,
-        "usr_high": 1000.0,
+    db = SessionLocal()
+    try:
+        profile = db.query(ApplicantProfile).filter(ApplicantProfile.user_id == user_id).first()
+        if profile:
+            return {
+                "active_credit_lines": 3,
+                "debts_total": profile.debts_total,
+                "missed_payments_last_12m": profile.missed_payments_last_12m
+            }
+    finally:
+        db.close()
+
+    # Fallback to test profile registry if not found in database
+    debts = {
+        "usr_low": {"debts_total": 8000.0, "missed_payments_last_12m": 0},
+        "usr_unemployed": {"debts_total": 1000.0, "missed_payments_last_12m": 0},
+        "usr_new_job": {"debts_total": 1500.0, "missed_payments_last_12m": 0},
+        "usr_missed_payments": {"debts_total": 2000.0, "missed_payments_last_12m": 2},
+        "usr_high_debt": {"debts_total": 6500.0, "missed_payments_last_12m": 0},
+        "usr_qualified": {"debts_total": 1200.0, "missed_payments_last_12m": 0},
     }
-    debts = debt_map.get(user_id, 2000.0)
+    profile = debts.get(user_id, {"debts_total": 2000.0, "missed_payments_last_12m": 0})
     
     return {
-        "active_credit_lines": 2,
-        "debts_total": debts,
-        "missed_payments_last_12m": 0
+        "active_credit_lines": 3,
+        "debts_total": profile["debts_total"],
+        "missed_payments_last_12m": profile["missed_payments_last_12m"]
     }
+
+@tool
+def get_income_profile(user_id: str) -> Dict[str, Any]:
+    """Fetch verified monthly gross income, employment status, and job length.
+    """
+    db = SessionLocal()
+    try:
+        profile = db.query(ApplicantProfile).filter(ApplicantProfile.user_id == user_id).first()
+        if profile:
+            return {
+                "employer_name": "Acme Global Corp",
+                "employment_status": profile.employment_status,
+                "monthly_gross_income": profile.monthly_gross_income,
+                "length_of_employment_years": profile.length_of_employment_years
+            }
+    finally:
+        db.close()
+
+    # Fallback to test profile registry if not found in database
+    incomes = {
+        "usr_low": {"income": 1500.0, "status": "Employed", "length": 4.5},
+        "usr_unemployed": {"income": 0.0, "status": "Unemployed", "length": 0.0},
+        "usr_new_job": {"income": 4500.0, "status": "Employed", "length": 0.4},
+        "usr_missed_payments": {"income": 5000.0, "status": "Employed", "length": 2.5},
+        "usr_high_debt": {"income": 3000.0, "status": "Employed", "length": 3.0},
+        "usr_qualified": {"income": 9500.0, "status": "Employed", "length": 3.5},
+    }
+    profile = incomes.get(user_id, {"income": 3000.0, "status": "Employed", "length": 2.0})
+    
+    return {
+        "employer_name": "Acme Global Corp",
+        "employment_status": profile["status"],
+        "monthly_gross_income": profile["income"],
+        "length_of_employment_years": profile["length"]
+    }
+
+# Tool schemas definition for LiteLLM tool calling
+TOOLS_SCHEMAS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_credit_profile",
+            "description": "Fetch credit bureau report. Contains credit score and report details.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "string"},
+                    "email": {"type": "string"}
+                },
+                "required": ["user_id", "email"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_active_debts",
+            "description": "Fetch active banking outstanding loan and monthly debt profile.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "string"}
+                },
+                "required": ["user_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_income_profile",
+            "description": "Fetch verified monthly gross income, employment status, and job length.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "string"}
+                },
+                "required": ["user_id"]
+            }
+        }
+    }
+]
+
+from app.db import SessionLocal
+from app.models import ApplicantProfile
 
 # 3. Define Graph Nodes
 
-def fetch_credit_score_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any]:
-    """Node 1: Fetch credit score using config callbacks context.
+def agent_brain_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any]:
+    """Node 1: The central LLM brain. Extracts policy thresholds dynamically 
+    from the configurable graph parameters.
     """
-    profile = get_credit_profile.invoke(
-        {"user_id": state["user_id"], "email": state["email"]},
-        config=config
+    messages = state["messages"].copy()
+    
+    # Read dynamic policy overrides from config (defaults if not provided)
+    configurable = config.get("configurable", {})
+    min_score = configurable.get("credit_score_threshold", 580)
+    max_dti = configurable.get("max_dti_ratio", 0.45)
+    min_job_years = configurable.get("min_employment_years", 1.0)
+    target_model = configurable.get("llm_model", "gemini/gemini-3.5-flash")
+    
+    # Inject configurable values dynamically into the system instructions!
+    system_msg = messages[0].copy()
+    system_msg["content"] = (
+        f"You are a professional bank loan underwriter agent.\n"
+        f"Your objective is to evaluate a loan request for User ID '{state['user_id']}' requesting ${state['requested_amount']}.\n\n"
+        f"You must use the following tools to fetch the necessary information:\n"
+        f"1. `get_credit_profile` (requires user_id, email)\n"
+        f"2. `get_active_debts` (requires user_id)\n"
+        f"3. `get_income_profile` (requires user_id)\n\n"
+        f"Underwriting & Affordability Rules (5 Criteria to Consider):\n"
+        f"1. Credit Score: If Credit Score is below {min_score}, DENY immediately (subprime borrower). Stop execution.\n"
+        f"2. Employment Status: Must be exactly 'Employed'. If 'Unemployed', DENY immediately. Stop execution.\n"
+        f"3. Length of Employment: Must be at least {min_job_years} years. If less than {min_job_years} years, DENY immediately. Stop. \n"
+        f"4. Payment History: Must have 0 missed payments in the last 12 months. If missed payments > 0, DENY. Stop.\n"
+        f"5. Debt-to-Income (DTI) Ratio: Must be {int(max_dti*100)}% or lower. Calculate DTI as follows:\n"
+        f"   a. Proposed monthly payment = Requested Amount / 60 months (5-year term).\n"
+        f"   b. Monthly debt obligations = (Outstanding Debts * 0.05) + Proposed monthly payment.\n"
+        f"   c. DTI Ratio = Monthly debt obligations / Monthly gross income.\n"
+        f"   d. If DTI Ratio is greater than {int(max_dti*100)}%, DENY. Otherwise, APPROVE.\n\n"
+        f"Execution Instructions:\n"
+        f"1. First, call `get_credit_profile` to check the credit score.\n"
+        f"2. If score is >= {min_score}, call both `get_active_debts` and `get_income_profile` to retrieve the remaining 4 features.\n"
+        f"3. Evaluate all 5 criteria. If any criteria fails, DENY the loan and explain exactly which features failed.\n"
+        f"4. If all 5 criteria pass, APPROVE the loan.\n"
+        f"5. When you have made a final decision, write:\n"
+        f"   Thought: <Your detailed reasoning explaining the 5 features, DTI calculations, and the specific failure reason if denied>\n"
+        f"   Decision: <APPROVED or DENIED>\n"
     )
-    return {
-        "credit_score": profile["credit_score"]
-    }
-
-def check_debts_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any]:
-    """Node 2: Fetch debt balance from the bank api tool.
-    """
-    debts_profile = get_active_debts.invoke(
-        {"user_id": state["user_id"]},
-        config=config
-    )
-    return {
-        "active_debts": debts_profile["debts_total"]
-    }
-
-def make_decision_node(state: AgentState) -> Dict[str, Any]:
-    """Node 3: Analyze information and make a decision using LLM reasoning.
-    Implements a multi-provider failover pool: tries Gemini first, and automatically
-    swaps to Groq (Llama 3.1) if Gemini is rate-limited or busy.
-    """
-    credit = state["credit_score"]
-    debts = state["active_debts"]
-    amount = state["requested_amount"]
     
-    prompt = f"""
-    You are a professional bank loan underwriter.
-    Analyze the loan application with the following criteria:
-    - Requested Amount: ${amount}
-    - Credit Score: {credit}
-    - Total Outstanding Debts: ${debts}
+    # Update the messages history to use the dynamically configured system instructions
+    messages[0] = system_msg
     
-    Rules for loan approvals:
-    - If Credit Score is below 550, DENY.
-    - If Credit Score is 700 or above, APPROVE.
-    - If Credit Score is between 550 and 700, APPROVE only if Total Outstanding Debts are less than $3,000. Otherwise, DENY.
+    # Establish priority list starting with the requested model
+    model_pool = [{"model": target_model, "api_key": None}]
     
-    First, write a single thought sentence explaining your analysis logic.
-    Second, write your final decision status (must be exactly 'APPROVED' or 'DENIED').
-    
-    Format your response EXACTLY like this:
-    Thought: <Your reasoning sentence here>
-    Decision: <APPROVED or DENIED>
-    """
-    
-    # Compile candidate list of models based on active keys
-    model_pool = []
-    
-    # Priority 1: Gemini (User's primary selection)
     if settings.GEMINI_API_KEY:
-        model_pool.append({
-            "model": "gemini/gemini-3.5-flash",
-            "api_key": settings.GEMINI_API_KEY
-        })
-    
-    # Priority 2: Groq / Llama (Free high-availability backup)
+        model_pool.append({"model": "gemini/gemini-3.5-flash", "api_key": settings.GEMINI_API_KEY})
     if settings.GROQ_API_KEY:
-        model_pool.append({
-            "model": "groq/llama-3.1-8b-instant",
-            "api_key": settings.GROQ_API_KEY
-        })
-        
-    # Priority 3: OpenAI (Paid option)
+        model_pool.append({"model": "groq/llama-3.1-8b-instant", "api_key": settings.GROQ_API_KEY})
     if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "mock-key":
-        model_pool.append({
-            "model": "openai/gpt-4o-mini",
-            "api_key": settings.OPENAI_API_KEY
-        })
+        model_pool.append({"model": "openai/gpt-4o-mini", "api_key": settings.OPENAI_API_KEY})
         
-    if not model_pool:
-        raise ValueError("Strict Mode Active: No active LLM API keys configured. Please add GEMINI_API_KEY or GROQ_API_KEY to your .env file.")
-        
-    content = ""
+    # Map the correct key for the selected model
+    for item in model_pool:
+        if "gemini" in item["model"]:
+            item["api_key"] = settings.GEMINI_API_KEY
+        elif "groq" in item["model"]:
+            item["api_key"] = settings.GROQ_API_KEY
+        elif "openai" in item["model"]:
+            item["api_key"] = settings.OPENAI_API_KEY
+            
+    response_msg = None
     last_err = None
     
-    # Execute routing through the pool
     for item in model_pool:
         model_name = item["model"]
         api_key = item["api_key"]
-        
-        # Retry logic per provider for transient errors
+        if not api_key:
+            continue
+            
         max_retries = 2
         for attempt in range(max_retries):
             try:
                 response = completion(
                     model=model_name,
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=messages,
+                    tools=TOOLS_SCHEMAS,
                     temperature=0.0,
                     api_key=api_key
                 )
-                content = response.choices[0].message.content.strip()
+                response_msg = response.choices[0].message
                 break
             except Exception as e:
                 last_err = e
-                # If a 503 capacity limit is reached, wait and retry
                 if "503" in str(e) or "overloaded" in str(e).lower():
                     wait_time = 2 ** attempt
-                    print(f"Warning: Model {model_name} is busy. Retrying in {wait_time}s...")
+                    print(f"Warning: {model_name} is busy. Retrying in {wait_time}s...")
                     time.sleep(wait_time)
                 else:
-                    # For other errors, skip directly to failover model
                     break
         
-        # If we got a successful response from this provider, stop the failover loop
-        if content:
+        if response_msg:
             break
     else:
-        # If all providers in the pool failed
-        raise last_err
+        raise last_err or ValueError("No valid LLM key matching requested models.")
+
+    new_message = {
+        "role": "assistant",
+        "content": response_msg.content or ""
+    }
     
-    thoughts = "Underwriting evaluation complete."
-    decision = "DENIED"
+    if response_msg.get("tool_calls"):
+        new_message["tool_calls"] = [
+            {
+                "id": tc.id,
+                "type": "function",
+                "function": {
+                    "name": tc.function.name,
+                    "arguments": tc.function.arguments
+                }
+            } for tc in response_msg.tool_calls
+        ]
+        
+    messages.append(new_message)
     
-    # Parse output structure
+    thoughts = state.get("thoughts", []).copy()
+    final_decision = state.get("final_decision", "PENDING")
+    
+    content = response_msg.content or ""
     for line in content.split("\n"):
-        if line.startswith("Thought:"):
-            thoughts = line.replace("Thought:", "").strip()
-        elif line.startswith("Decision:"):
-            decision = line.replace("Decision:", "").strip()
-            
+        if "Thought:" in line:
+            t = line.split("Thought:")[-1].strip()
+            thoughts.append(t)
+        if "Decision:" in line:
+            d = line.split("Decision:")[-1].strip()
+            if "APPROVED" in d.upper():
+                final_decision = "APPROVED"
+            elif "DENIED" in d.upper():
+                final_decision = "DENIED"
+                
     return {
-        "thoughts": [thoughts],
-        "final_decision": decision
+        "messages": messages,
+        "thoughts": thoughts,
+        "final_decision": final_decision
     }
 
-# 4. Define and Compile the State Graph
+
+def tools_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any]:
+    """Node 2: Tool Execution block.
+    """
+    messages = state["messages"].copy()
+    last_msg = messages[-1]
+    
+    tool_calls = last_msg.get("tool_calls", [])
+    for tc in tool_calls:
+        func_name = tc["function"]["name"]
+        args = json.loads(tc["function"]["arguments"])
+        
+        if func_name == "get_credit_profile":
+            result = get_credit_profile.invoke(args, config=config)
+        elif func_name == "get_active_debts":
+            result = get_active_debts.invoke(args, config=config)
+        elif func_name == "get_income_profile":
+            result = get_income_profile.invoke(args, config=config)
+        else:
+            result = {"error": f"Unknown tool: {func_name}"}
+            
+        messages.append({
+            "role": "tool",
+            "tool_call_id": tc.get("id", "call_id"),
+            "name": func_name,
+            "content": json.dumps(result)
+        })
+        
+    return {"messages": messages}
+
+
+def route_next(state: AgentState) -> str:
+    last_msg = state["messages"][-1]
+    if last_msg.get("tool_calls"):
+        return "tools_node"
+    return END
+
+
+# 5. Compile the State Graph
 workflow = StateGraph(AgentState)
 
-workflow.add_node("fetch_credit_score", fetch_credit_score_node)
-workflow.add_node("check_debts", check_debts_node)
-workflow.add_node("make_decision", make_decision_node)
+workflow.add_node("agent_brain", agent_brain_node)
+workflow.add_node("tools_node", tools_node)
 
-workflow.add_edge(START, "fetch_credit_score")
-workflow.add_edge("fetch_credit_score", "check_debts")
-workflow.add_edge("check_debts", "make_decision")
-workflow.add_edge("make_decision", END)
+workflow.add_edge(START, "agent_brain")
+workflow.add_conditional_edges(
+    "agent_brain",
+    route_next,
+    {
+        "tools_node": "tools_node",
+        END: END
+    }
+)
+workflow.add_edge("tools_node", "agent_brain")
 
 agent_executor = workflow.compile()

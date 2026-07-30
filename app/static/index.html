@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Audit Dashboard</title>
+    <title>Loan Approver Agent Control Center</title>
     <!-- Modern Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,12 +38,12 @@
             flex-direction: column;
             overflow-x: hidden;
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 45%);
+                radial-gradient(circle at 5% 10%, rgba(99, 102, 241, 0.05) 0%, transparent 35%),
+                radial-gradient(circle at 95% 90%, rgba(139, 92, 246, 0.06) 0%, transparent 40%);
         }
 
         header {
-            padding: 24px 40px;
+            padding: 20px 40px;
             border-bottom: 1px solid var(--border-color);
             background: rgba(11, 15, 25, 0.8);
             backdrop-filter: blur(12px);
@@ -62,8 +62,8 @@
         }
 
         .logo-icon {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             background: linear-gradient(135deg, #a78bfa, var(--primary-accent));
             border-radius: 8px;
             box-shadow: 0 0 16px var(--primary-glow);
@@ -71,7 +71,7 @@
 
         h1 {
             font-family: 'Outfit', sans-serif;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 600;
             letter-spacing: -0.5px;
             background: linear-gradient(to right, #ffffff, #c084fc);
@@ -80,13 +80,13 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1500px;
             width: 100%;
             margin: 0 auto;
-            padding: 32px 40px;
+            padding: 24px 40px;
             display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 32px;
+            grid-template-columns: 460px 1fr;
+            gap: 24px;
             flex-grow: 1;
         }
 
@@ -100,47 +100,57 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
-            gap: 20px;
-        }
-
-        /* Left Search Panel */
-        .search-section {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            gap: 18px;
+            height: fit-content;
+            min-width: 0;
         }
 
         .search-title {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--text-secondary);
         }
 
-        .search-box {
+        /* Forms inputs */
+        .form-group {
             display: flex;
-            gap: 8px;
-            position: relative;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
 
         .search-input {
             width: 100%;
-            padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.03);
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             color: #fff;
             font-family: inherit;
-            font-size: 14px;
+            font-size: 13px;
             transition: all 0.2s ease;
         }
 
         .search-input:focus {
             outline: none;
             border-color: var(--primary-accent);
-            box-shadow: 0 0 12px var(--primary-glow);
-            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 10px var(--primary-glow);
+            background: rgba(255, 255, 255, 0.04);
         }
 
         .btn {
@@ -148,45 +158,62 @@
             color: white;
             border: none;
             border-radius: 8px;
-            padding: 12px 18px;
+            padding: 12px 16px;
             font-family: inherit;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
         }
 
         .btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.35);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.3);
             background: #9b72f8;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            box-shadow: none;
+            padding: 10px 16px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
         }
 
         .session-list {
             list-style: none;
             overflow-y: auto;
-            max-height: 500px;
+            max-height: 220px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
+            padding-right: 2px;
         }
 
         .session-item {
-            padding: 16px;
+            padding: 12px 14px;
             border-radius: 8px;
             border: 1px solid transparent;
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(255, 255, 255, 0.015);
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
         }
 
         .session-item:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.06);
         }
 
         .session-item.active {
@@ -202,11 +229,11 @@
 
         .session-user {
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .badge {
-            font-size: 11px;
+            font-size: 10px;
             padding: 2px 8px;
             border-radius: 12px;
             font-weight: 700;
@@ -224,12 +251,12 @@
         }
 
         .session-amount {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-secondary);
         }
 
         .session-date {
-            font-size: 11px;
+            font-size: 10px;
             color: var(--text-secondary);
             align-self: flex-end;
         }
@@ -238,7 +265,7 @@
         .workspace-section {
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 20px;
         }
 
         .workspace-placeholder {
@@ -249,7 +276,7 @@
             flex-direction: column;
             align-items: center;
             gap: 16px;
-            padding: 80px 0;
+            padding: 150px 0;
         }
 
         .placeholder-icon {
@@ -259,9 +286,46 @@
 
         /* Detail Cards */
         .details-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .status-header-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 24px;
+        }
+
+        .status-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .status-banner {
+            font-size: 14px;
+            padding: 6px 16px;
+            font-weight: 700;
+            border-radius: 20px;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-banner.approved {
+            background: var(--success);
+            color: white;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .status-banner.denied {
+            background: var(--danger);
+            color: white;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
         }
 
         .explanation-card {
@@ -284,18 +348,20 @@
         }
 
         .card-title {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--primary-accent);
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .explanation-text {
-            font-size: 16px;
+            font-size: 15px;
             line-height: 1.6;
             color: #f3f4f6;
+            white-space: normal;
+            word-wrap: break-word;
         }
 
         /* Timeline Tree Styling */
@@ -304,21 +370,23 @@
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 24px;
+            min-width: 0;
         }
 
         .timeline-tree {
             position: relative;
-            padding-left: 32px;
-            margin-top: 16px;
+            padding-left: 28px;
+            margin-top: 12px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 20px;
+            min-width: 0;
         }
 
         .timeline-tree::before {
             content: '';
             position: absolute;
-            left: 11px;
+            left: 9px;
             top: 4px;
             bottom: 4px;
             width: 2px;
@@ -327,59 +395,61 @@
 
         .timeline-node {
             position: relative;
+            min-width: 0;
         }
 
         .timeline-icon {
             position: absolute;
-            left: -32px;
+            left: -28px;
             top: 2px;
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             background: #1f2937;
             border: 2px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: 10px;
             z-index: 2;
             transition: all 0.3s ease;
         }
 
         .timeline-node.active .timeline-icon {
             border-color: var(--primary-accent);
-            box-shadow: 0 0 10px var(--primary-glow);
+            box-shadow: 0 0 8px var(--primary-glow);
             background: var(--primary-accent);
             color: white;
         }
 
         .timeline-content {
-            background: rgba(255, 255, 255, 0.015);
+            background: rgba(255, 255, 255, 0.012);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 14px 18px;
+            padding: 12px 16px;
             transition: all 0.2s ease;
+            min-width: 0;
         }
 
         .timeline-content:hover {
-            background: rgba(255, 255, 255, 0.025);
-            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+            border-color: rgba(255, 255, 255, 0.08);
         }
 
         .node-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .node-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
         }
 
         .node-type {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
             color: var(--text-secondary);
             text-transform: uppercase;
@@ -390,35 +460,48 @@
 
         .node-body {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 13px;
+            font-size: 12px;
             color: #a7f3d0;
-            word-break: break-all;
-            background: rgba(0, 0, 0, 0.15);
-            padding: 10px;
+            background: rgba(0, 0, 0, 0.18);
+            padding: 8px 10px;
             border-radius: 6px;
-            margin-top: 6px;
+            margin-top: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-all;
         }
 
         .node-time {
-            font-size: 11px;
+            font-size: 10px;
             color: var(--text-secondary);
             text-align: right;
-            margin-top: 6px;
+            margin-top: 4px;
         }
 
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar {
-            width: 6px;
+        /* Loading spinner */
+        .spinner {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 2px solid #fff;
+            width: 14px;
+            height: 14px;
+            animation: spin 0.8s linear infinite;
         }
-        ::-webkit-scrollbar-track {
-            background: transparent;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.2);
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 16px;
+                gap: 16px;
+            }
+            header {
+                padding: 16px 20px;
+            }
         }
     </style>
 </head>
@@ -427,30 +510,148 @@
     <header>
         <div class="logo-container">
             <div class="logo-icon"></div>
-            <h1>Decision Path Auditor</h1>
+            <h1>Loan Approver Control Center</h1>
         </div>
-        <span class="badge approved" style="padding: 6px 14px;">Live System</span>
+        <span class="badge approved" style="padding: 6px 14px; letter-spacing: 0.5px;">LLM Secured</span>
     </header>
 
     <div class="container">
         
-        <!-- Left Panel: Search and Sessions List -->
+        <!-- Left Panel: Form & Search -->
         <div class="panel">
+            <!-- 1. System Authorization -->
             <div class="search-section">
-                <h2 class="search-title">Search Audits</h2>
-                <div class="search-box">
-                    <input type="text" id="userInput" class="search-input" placeholder="Enter User ID (e.g. usr_low)">
-                    <button class="btn" onclick="fetchSessions()">Search</button>
+                <h2 class="search-title">System Authorization</h2>
+                <div class="form-group">
+                    <input type="password" id="apiKeyInput" class="search-input" value="super-secret-audit-key-99" placeholder="Enter X-API-Key">
                 </div>
             </div>
             
-            <div style="border-top: 1px solid var(--border-color); margin: 8px 0;"></div>
+            <div style="border-top: 1px solid var(--border-color); margin: 2px 0;"></div>
+
+            <!-- 2. Run Loan Evaluation Form -->
+            <div class="search-section">
+                <h2 class="search-title">Evaluate New Applicant</h2>
+                
+                <!-- Preset Templates Selection -->
+                <div class="form-group">
+                    <label class="form-label">Scenario Presets</label>
+                    <select id="scenarioPresets" class="search-input" onchange="applyPreset(this.value)" style="background: #111827; color: #c084fc; font-weight: 600;">
+                        <option value="usr_qualified">Approved: Fully Qualified Presets</option>
+                        <option value="usr_low">Denied: Credit Score Failure (< 580)</option>
+                        <option value="usr_unemployed">Denied: Unemployed Status</option>
+                        <option value="usr_new_job">Denied: Short Job Length (< 1 Year)</option>
+                        <option value="usr_missed_payments">Denied: Missed Payment History</option>
+                        <option value="usr_high_debt">Denied: Excessive DTI Debt Ratio</option>
+                        <option value="custom">-- Custom User Config (Manual Edit) --</option>
+                    </select>
+                </div>
+
+                <!-- Form Inputs -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">User ID (Auditor Target)</label>
+                        <input type="text" id="evalUserId" class="search-input" value="usr_qualified">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Requested Loan ($)</label>
+                        <input type="number" id="evalAmount" class="search-input" value="10000">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Credit Score</label>
+                        <input type="number" id="evalCreditScore" class="search-input" value="740" min="300" max="850">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Monthly Gross Income ($)</label>
+                        <input type="number" id="evalIncome" class="search-input" value="9500">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Outstanding Debts ($)</label>
+                        <input type="number" id="evalDebts" class="search-input" value="1200">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Missed Payments (Last 12m)</label>
+                        <input type="number" id="evalMissedPayments" class="search-input" value="0" min="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Job Length (Years)</label>
+                        <input type="number" id="evalJobLength" class="search-input" value="3.5" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Employment Status</label>
+                        <select id="evalStatus" class="search-input" style="background: #111827; color: white;">
+                            <option value="Employed">Employed</option>
+                            <option value="Unemployed">Unemployed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="text" id="evalEmail" class="search-input" value="customer.alice@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="text" id="evalPhone" class="search-input" value="+1-555-0199">
+                    </div>
+                </div>
+
+                <!-- 2.5 Configurable Underwriting Policy (Changes the Agent Rules at Runtime!) -->
+                <div style="border-top: 1px dashed var(--border-color); margin: 6px 0;"></div>
+                <h2 class="search-title" style="color: #c084fc; font-size: 11px; letter-spacing: 0.5px;">Agent Underwriting Policy (Runtime Config)</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Min Credit Score</label>
+                        <input type="number" id="policyMinScore" class="search-input" value="580">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max DTI Ratio (%)</label>
+                        <input type="number" id="policyMaxDti" class="search-input" value="45">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Min Job Length (Years)</label>
+                        <input type="number" id="policyMinJob" class="search-input" value="1.0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Target LLM Brain</label>
+                        <select id="policyLLM" class="search-input" style="background: #111827; color: white;">
+                            <option value="gemini/gemini-3.5-flash">Gemini 3.5 Flash</option>
+                            <option value="groq/llama-3.1-8b-instant">Groq: Llama 3.1 8B</option>
+                            <option value="openai/gpt-4o-mini">OpenAI: GPT-4o Mini</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn" id="evalBtn" onclick="runEvaluation()" style="margin-top: 6px;">
+                    <span>Run AI Evaluation</span>
+                </button>
+            </div>
+
+            <div style="border-top: 1px solid var(--border-color); margin: 2px 0;"></div>
             
+            <!-- 3. Audit Search & Recent list -->
             <div class="search-section" style="flex-grow: 1;">
-                <h2 class="search-title">Recent Sessions</h2>
-                <ul class="session-list" id="sessionList">
+                <h2 class="search-title">Audit Registry</h2>
+                <div class="search-box">
+                    <input type="text" id="userInput" class="search-input" placeholder="Filter by User ID">
+                    <button class="btn btn-secondary" onclick="fetchSessions()">Search</button>
+                </div>
+                <ul class="session-list" id="sessionList" style="margin-top: 10px;">
                     <!-- Dynamic sessions load here -->
-                    <li style="color: var(--text-secondary); text-align: center; margin-top: 20px; font-size: 13px;">No sessions loaded. Click search.</li>
                 </ul>
             </div>
         </div>
@@ -459,14 +660,20 @@
         <div class="panel" style="flex-grow: 1;">
             <div class="workspace-section" id="workspaceContent" style="display: none;">
                 
-                <h2 font-family="'Outfit', sans-serif" style="font-size: 20px; font-weight: 500;">
-                    Session Details: <span id="activeSessionId" style="color: var(--text-secondary); font-size: 15px;"></span>
-                </h2>
+                <div class="status-header-card">
+                    <div style="min-width: 0; flex-grow: 1; margin-right: 12px;">
+                        <h2 font-family="'Outfit', sans-serif" style="font-size: 18px; font-weight: 600; margin-bottom: 2px;">
+                            Session ID
+                        </h2>
+                        <span id="activeSessionId" style="color: var(--text-secondary); font-size: 13px; word-break: break-all;"></span>
+                    </div>
+                    <div id="statusBanner" class="status-banner">APPROVED</div>
+                </div>
                 
                 <div class="details-grid">
                     <!-- LLM Explanation Card -->
                     <div class="explanation-card">
-                        <div class="card-title">LLM Plain-English Decision Reason</div>
+                        <div class="card-title">LLM Decision Summary (Plain-English)</div>
                         <div class="explanation-text" id="explanationText">
                             Loading AI explanation...
                         </div>
@@ -474,7 +681,7 @@
                     
                     <!-- Timeline Card -->
                     <div class="timeline-card">
-                        <div class="card-title">Chronological Execution Path</div>
+                        <div class="card-title">Chronological Step Trace</div>
                         <div class="timeline-tree" id="timelineTree">
                             <!-- Dynamic timeline steps loaded here -->
                         </div>
@@ -485,15 +692,169 @@
 
             <!-- Placeholder Screen -->
             <div class="workspace-placeholder" id="placeholderScreen">
-                <span class="placeholder-icon">📋</span>
-                <h3>No Session Selected</h3>
-                <p>Search for a User ID on the left and select an audit record to inspect the agent's decision path.</p>
+                <span class="placeholder-icon">🛡️</span>
+                <h3>Agent Decision Path Workspace</h3>
+                <p>Run a new AI evaluation above, or select a session from the Audit Registry to view its secure, redacted timeline.</p>
             </div>
         </div>
 
     </div>
 
     <script>
+        // Preset values matching core mock data
+        const presets = {
+            usr_qualified: {
+                userId: "usr_qualified",
+                amount: 10000,
+                creditScore: 740,
+                income: 9500,
+                debts: 1200,
+                missed: 0,
+                length: 3.5,
+                status: "Employed"
+            },
+            usr_low: {
+                userId: "usr_low",
+                amount: 10000,
+                creditScore: 500,
+                income: 1500,
+                debts: 8000,
+                missed: 0,
+                length: 4.5,
+                status: "Employed"
+            },
+            usr_unemployed: {
+                userId: "usr_unemployed",
+                amount: 10000,
+                creditScore: 680,
+                income: 0,
+                debts: 1000,
+                missed: 0,
+                length: 0.0,
+                status: "Unemployed"
+            },
+            usr_new_job: {
+                userId: "usr_new_job",
+                amount: 10000,
+                creditScore: 690,
+                income: 4500,
+                debts: 1500,
+                missed: 0,
+                length: 0.4,
+                status: "Employed"
+            },
+            usr_missed_payments: {
+                userId: "usr_missed_payments",
+                amount: 10000,
+                creditScore: 710,
+                income: 5000,
+                debts: 2000,
+                missed: 2,
+                length: 2.5,
+                status: "Employed"
+            },
+            usr_high_debt: {
+                userId: "usr_high_debt",
+                amount: 10000,
+                creditScore: 620,
+                income: 3000,
+                debts: 6500,
+                missed: 0,
+                length: 3.0,
+                status: "Employed"
+            }
+        };
+
+        function applyPreset(val) {
+            if (val === "custom") return;
+            const data = presets[val];
+            if (!data) return;
+
+            document.getElementById('evalUserId').value = data.userId;
+            document.getElementById('evalAmount').value = data.amount;
+            document.getElementById('evalCreditScore').value = data.creditScore;
+            document.getElementById('evalIncome').value = data.income;
+            document.getElementById('evalDebts').value = data.debts;
+            document.getElementById('evalMissedPayments').value = data.missed;
+            document.getElementById('evalJobLength').value = data.length;
+            document.getElementById('evalStatus').value = data.status;
+
+            // Reset policy parameters to defaults
+            document.getElementById('policyMinScore').value = 580;
+            document.getElementById('policyMaxDti').value = 45;
+            document.getElementById('policyMinJob').value = 1.0;
+            document.getElementById('policyLLM').selectedIndex = 0;
+        }
+
+        function getHeaders() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            return {
+                "Content-Type": "application/json",
+                "X-API-Key": apiKey
+            };
+        }
+
+        async function runEvaluation() {
+            const btn = document.getElementById('evalBtn');
+            const originalText = btn.innerHTML;
+            
+            // Set loading state
+            btn.disabled = true;
+            btn.innerHTML = `<div class="spinner"></div> <span>Processing Agent Loop...</span>`;
+
+            // Read variables directly from form for dynamic testing!
+            const payload = {
+                user_id: document.getElementById('evalUserId').value.trim(),
+                email: document.getElementById('evalEmail').value.trim(),
+                phone: document.getElementById('evalPhone').value.trim(),
+                requested_amount: parseFloat(document.getElementById('evalAmount').value),
+                
+                // Applicant overrides
+                credit_score: parseInt(document.getElementById('evalCreditScore').value),
+                debts_total: parseFloat(document.getElementById('evalDebts').value),
+                missed_payments_last_12m: parseInt(document.getElementById('evalMissedPayments').value),
+                monthly_gross_income: parseFloat(document.getElementById('evalIncome').value),
+                employment_status: document.getElementById('evalStatus').value,
+                length_of_employment_years: parseFloat(document.getElementById('evalJobLength').value),
+
+                // Policy configurations (Change the agent itself!)
+                credit_score_threshold: parseInt(document.getElementById('policyMinScore').value),
+                max_dti_ratio: parseFloat(document.getElementById('policyMaxDti').value) / 100,
+                min_employment_years: parseFloat(document.getElementById('policyMinJob').value),
+                llm_model: document.getElementById('policyLLM').value
+            };
+
+            try {
+                const response = await fetch('/agent/run', {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.status === 401) {
+                    alert("Unauthorized: Invalid API Key provided in System Authorization!");
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                // Refresh list
+                await fetchSessions();
+                
+                // Highlight and select the new session
+                const items = document.querySelectorAll('.session-item');
+                if (items.length > 0) {
+                    selectSession(data.session_id, items[0]);
+                }
+            } catch (err) {
+                console.error("Error running evaluation:", err);
+                alert("Agent execution failed! Check your terminal console for errors.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
         async function fetchSessions() {
             const userId = document.getElementById('userInput').value.trim();
             let url = '/audit/sessions';
@@ -502,7 +863,11 @@
             }
 
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, { headers: getHeaders() });
+                if (response.status === 401) {
+                    alert("Unauthorized: Search query blocked.");
+                    return;
+                }
                 const data = await response.json();
                 renderSessions(data);
             } catch (err) {
@@ -515,7 +880,7 @@
             list.innerHTML = '';
             
             if (sessions.length === 0) {
-                list.innerHTML = `<li style="color: var(--text-secondary); text-align: center; margin-top: 20px; font-size: 13px;">No sessions found.</li>`;
+                list.innerHTML = `<li style="color: var(--text-secondary); text-align: center; margin-top: 20px; font-size: 12px;">No records found.</li>`;
                 return;
             }
 
@@ -542,25 +907,31 @@
         }
 
         async function selectSession(sessionId, element) {
-            // Manage active styles
             document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
 
-            // Toggle views
             document.getElementById('placeholderScreen').style.display = 'none';
             document.getElementById('workspaceContent').style.display = 'flex';
             document.getElementById('activeSessionId').innerText = sessionId;
             document.getElementById('explanationText').innerText = "Querying Gemini for explanation...";
 
-            // Fetch Timeline & Explanation in parallel
             fetchTimeline(sessionId);
             fetchExplanation(sessionId);
         }
 
         async function fetchTimeline(sessionId) {
             try {
-                const response = await fetch(`/audit/session/${sessionId}`);
+                const response = await fetch(`/audit/session/${sessionId}`, { headers: getHeaders() });
                 const data = await response.json();
+                
+                const banner = document.getElementById('statusBanner');
+                banner.innerText = data.decision_status;
+                if (data.decision_status.toLowerCase() === 'approved') {
+                    banner.className = 'status-banner approved';
+                } else {
+                    banner.className = 'status-banner denied';
+                }
+
                 renderTimeline(data.timeline);
             } catch (err) {
                 console.error("Error fetching timeline:", err);
@@ -569,7 +940,7 @@
 
         async function fetchExplanation(sessionId) {
             try {
-                const response = await fetch(`/audit/session/${sessionId}/explain`);
+                const response = await fetch(`/audit/session/${sessionId}/explain`, { headers: getHeaders() });
                 const data = await response.json();
                 document.getElementById('explanationText').innerText = data.explanation;
             } catch (err) {
@@ -620,8 +991,8 @@
             });
         }
 
-        // Auto load sessions on mount
-        fetchSessions();
+        // Initialize presets on mount
+        applyPreset("usr_qualified");
     </script>
 </body>
 </html>

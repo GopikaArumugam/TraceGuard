@@ -9,6 +9,20 @@ class LoanRequest(BaseModel):
     email: str = Field(..., description="Customer contact email address", example="customer.alice@gmail.com")
     phone: str = Field(..., description="Customer phone number", example="+1-555-0199")
     requested_amount: float = Field(..., gt=0, description="Requested loan principal amount", example=15000.0)
+    
+    # Custom Underwriting Overrides for Dynamic Testing
+    credit_score: Optional[int] = Field(None, description="Custom credit score override")
+    debts_total: Optional[float] = Field(None, description="Custom outstanding debt override")
+    missed_payments_last_12m: Optional[int] = Field(None, description="Custom missed payments override")
+    monthly_gross_income: Optional[float] = Field(None, description="Custom monthly income override")
+    employment_status: Optional[str] = Field(None, description="Custom employment status override")
+    length_of_employment_years: Optional[float] = Field(None, description="Custom employment length override")
+
+    # Underwriting Policy Configuration (Change the Agent itself!)
+    credit_score_threshold: Optional[int] = Field(None, description="Underwriting credit score threshold constraint (default: 580)")
+    max_dti_ratio: Optional[float] = Field(None, description="Underwriting max Debt-to-Income ratio (default: 0.45)")
+    min_employment_years: Optional[float] = Field(None, description="Underwriting min job history threshold in years (default: 1.0)")
+    llm_model: Optional[str] = Field(None, description="LLM brain model target name override (default: gemini/gemini-3.5-flash)")
 
 # 2. Output response returned immediately after agent processing
 class LoanResponse(BaseModel):

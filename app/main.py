@@ -6,7 +6,7 @@ from datetime import datetime
 
 from app.config import settings
 from app.db import get_db, Base, engine
-from app.models import AgentSession, DecisionStep
+from app.models import AgentSession, DecisionStep, ApplicantProfile
 from app.schemas import (
     LoanRequest,
     LoanResponse,
@@ -21,7 +21,18 @@ from app.summarizer import generate_decision_summary
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.security import APIKeyHeader
 import os
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+def validate_api_key(api_key: str = Depends(api_key_header)):
+    if not api_key or api_key != settings.API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API Key (X-API-Key header required)."
+        )
+    return api_key
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -52,10 +63,53 @@ def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow()}
 
 @app.post("/agent/run", response_model=LoanResponse, status_code=status.HTTP_201_CREATED, tags=["Agent Execution"])
-def run_loan_agent(payload: LoanRequest, db: Session = Depends(get_db)):
+def run_loan_agent(payload: LoanRequest, db: Session = Depends(get_db), api_key: str = Depends(validate_api_key)):
     """Triggers the Loan Approver Agent to evaluate a loan request.
     Auto-redacts PII and commits the detailed trace steps to the database.
     """
+    # 0. Check and upsert custom ApplicantProfile if custom parameters are provided
+    if any(v is not None for v in [
+        payload.credit_score,
+        payload.debts_total,
+        payload.missed_payments_last_12m,
+        payload.monthly_gross_income,
+        payload.employment_status,
+        payload.length_of_employment_years
+    ]):
+        profile = db.query(ApplicantProfile).filter(ApplicantProfile.user_id == payload.user_id).first()
+        if not profile:
+            profile = ApplicantProfile(user_id=payload.user_id)
+            # Provide safe default fallbacks for unsupplied values
+            profile.credit_score = payload.credit_score if payload.credit_score is not None else 650
+            profile.debts_total = payload.debts_total if payload.debts_total is not None else 2000.0
+            profile.missed_payments_last_12m = payload.missed_payments_last_12m if payload.missed_payments_last_12m is not None else 0
+            profile.monthly_gross_income = payload.monthly_gross_income if payload.monthly_gross_income is not None else 3000.0
+            profile.employment_status = payload.employment_status if payload.employment_status is not None else "Employed"
+            profile.length_of_employment_years = payload.length_of_employment_years if payload.length_of_employment_years is not None else 2.0
+            db.add(profile)
+        else:
+            if payload.credit_score is not None:
+                profile.credit_score = payload.credit_score
+            if payload.debts_total is not None:
+                profile.debts_total = payload.debts_total
+            if payload.missed_payments_last_12m is not None:
+                profile.missed_payments_last_12m = payload.missed_payments_last_12m
+            if payload.monthly_gross_income is not None:
+                profile.monthly_gross_income = payload.monthly_gross_income
+            if payload.employment_status is not None:
+                profile.employment_status = payload.employment_status
+            if payload.length_of_employment_years is not None:
+                profile.length_of_employment_years = payload.length_of_employment_years
+            
+        try:
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to save custom applicant profile parameters: {str(e)}"
+            )
+
     # 1. Initialize session record in DB
     session_id = uuid.uuid4()
     session = AgentSession(
@@ -75,19 +129,62 @@ def run_loan_agent(payload: LoanRequest, db: Session = Depends(get_db)):
             detail="Failed to initialize auditing session."
         )
 
-    # 2. Setup Agent State parameters
+    # 2. Setup Agent State parameters (ReAct loop state)
     initial_state = {
         "user_id": payload.user_id,
         "email": payload.email,
         "phone": payload.phone,
         "requested_amount": payload.requested_amount,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    f"You are a professional bank loan underwriter agent.\n"
+                    f"Your objective is to evaluate a loan request for User ID '{payload.user_id}' requesting ${payload.requested_amount}.\n\n"
+                    f"You must use the following tools to fetch the necessary information:\n"
+                    f"1. `get_credit_profile` (requires user_id, email)\n"
+                    f"2. `get_active_debts` (requires user_id)\n"
+                    f"3. `get_income_profile` (requires user_id)\n\n"
+                    f"Underwriting & Affordability Rules (5 Criteria to Consider):\n"
+                    f"1. Credit Score: If Credit Score is below 580, DENY immediately (subprime borrower). Stop execution.\n"
+                    f"2. Employment Status: Must be exactly 'Employed'. If 'Unemployed', DENY immediately. Stop execution.\n"
+                    f"3. Length of Employment: Must be at least 1.0 years. If less than 1.0 years, DENY immediately. Stop. \n"
+                    f"4. Payment History: Must have 0 missed payments in the last 12 months. If missed payments > 0, DENY. Stop.\n"
+                    f"5. Debt-to-Income (DTI) Ratio: Must be 45% or lower. Calculate DTI as follows:\n"
+                    f"   a. Proposed monthly payment = Requested Amount / 60 months (5-year term).\n"
+                    f"   b. Monthly debt obligations = (Outstanding Debts * 0.05) + Proposed monthly payment.\n"
+                    f"   c. DTI Ratio = Monthly debt obligations / Monthly gross income.\n"
+                    f"   d. If DTI Ratio is greater than 45%, DENY. Otherwise, APPROVE.\n\n"
+                    f"Execution Instructions:\n"
+                    f"1. First, call `get_credit_profile` to check the credit score.\n"
+                    f"2. If score is >= 580, call both `get_active_debts` and `get_income_profile` to retrieve the remaining 4 features.\n"
+                    f"3. Evaluate all 5 criteria. If any criteria fails, DENY the loan and explain exactly which features failed.\n"
+                    f"4. If all 5 criteria pass, APPROVE the loan.\n"
+                    f"5. When you have made a final decision, write:\n"
+                    f"   Thought: <Your detailed reasoning explaining the 5 features, DTI calculations, and the specific failure reason if denied>\n"
+                    f"   Decision: <APPROVED or DENIED>\n"
+                )
+            },
+            {
+                "role": "user",
+                "content": "Begin the evaluation."
+            }
+        ],
         "thoughts": [],
         "final_decision": "PENDING"
     }
 
-    # 3. Instantiate and attach callback handler to capture tool events
+    # 3. Instantiate and attach callback handler and configurable agent policy
     handler = AuditCallbackHandler(session_id=session_id)
-    config = {"callbacks": [handler]}
+    config = {
+        "callbacks": [handler],
+        "configurable": {
+            "credit_score_threshold": payload.credit_score_threshold if payload.credit_score_threshold is not None else 580,
+            "max_dti_ratio": payload.max_dti_ratio if payload.max_dti_ratio is not None else 0.45,
+            "min_employment_years": payload.min_employment_years if payload.min_employment_years is not None else 1.0,
+            "llm_model": payload.llm_model if payload.llm_model else "gemini/gemini-3.5-flash"
+        }
+    }
 
     # 4. Invoke the LangGraph graph
     try:
@@ -146,7 +243,8 @@ def run_loan_agent(payload: LoanRequest, db: Session = Depends(get_db)):
 def get_audit_sessions(
     user_id: Optional[str] = Query(None, description="Search by user identifier"),
     status: Optional[str] = Query(None, description="Filter by decision status (APPROVED/DENIED)"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    api_key: str = Depends(validate_api_key)
 ):
     """Fulfills the Search & Retrieval Component.
     Enables searching through historical audit sessions by user or decision status.
@@ -161,7 +259,7 @@ def get_audit_sessions(
     return sessions
 
 @app.get("/audit/session/{session_id}", response_model=AuditTimelineResponse, tags=["Audit Registry"])
-def get_session_audit_trace(session_id: uuid.UUID, db: Session = Depends(get_db)):
+def get_session_audit_trace(session_id: uuid.UUID, db: Session = Depends(get_db), api_key: str = Depends(validate_api_key)):
     """Fulfills the Replay Capability & Decision Timeline Components.
     Retrieves the complete, chronological timeline of events for an evaluation run.
     """
@@ -197,7 +295,7 @@ def get_session_audit_trace(session_id: uuid.UUID, db: Session = Depends(get_db)
     )
 
 @app.get("/audit/session/{session_id}/explain", response_model=ExplanationResponse, tags=["Audit Registry"])
-def explain_agent_decision(session_id: uuid.UUID, db: Session = Depends(get_db)):
+def explain_agent_decision(session_id: uuid.UUID, db: Session = Depends(get_db), api_key: str = Depends(validate_api_key)):
     """Generates a plain-English explanation for an agent's loan approval decision.
     """
     try:

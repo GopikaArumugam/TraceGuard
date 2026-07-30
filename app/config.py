@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     # FastAPI Server Settings
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
+    API_KEY: str = "super-secret-audit-key-99"
     
     # Enable reading configurations from .env files
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

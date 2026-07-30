@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Float, DateTime, ForeignKey, JSON, Text
+from sqlalchemy import Column, String, Float, DateTime, ForeignKey, JSON, Text, Integer
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.types import TypeDecorator, CHAR
 from app.db import Base
@@ -58,3 +58,16 @@ class DecisionStep(Base):
     input_payload = Column(JSON, nullable=True)
     output_payload = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+class ApplicantProfile(Base):
+    __tablename__ = "applicant_profiles"
+
+    user_id = Column(String(100), primary_key=True)
+    credit_score = Column(Integer, nullable=False)
+    debts_total = Column(Float, nullable=False)
+    missed_payments_last_12m = Column(Integer, nullable=False)
+    monthly_gross_income = Column(Float, nullable=False)
+    employment_status = Column(String(50), nullable=False)
+    length_of_employment_years = Column(Float, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
