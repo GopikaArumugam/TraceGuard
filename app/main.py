@@ -17,7 +17,7 @@ from app.schemas import (
 )
 from app.agent import agent_executor
 from app.callbacks import AuditCallbackHandler
-from app.summarizer import generate_decision_summary
+from app.summarizer import generate_decision_summary, generate_challenge_response
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -243,17 +243,23 @@ def run_loan_agent(payload: LoanRequest, db: Session = Depends(get_db), api_key:
 def get_audit_sessions(
     user_id: Optional[str] = Query(None, description="Search by user identifier"),
     status: Optional[str] = Query(None, description="Filter by decision status (APPROVED/DENIED)"),
+    start_time: Optional[datetime] = Query(None, description="Filter logs starting from this timestamp (ISO format)"),
+    end_time: Optional[datetime] = Query(None, description="Filter logs ending at this timestamp (ISO format)"),
     db: Session = Depends(get_db),
     api_key: str = Depends(validate_api_key)
 ):
     """Fulfills the Search & Retrieval Component.
-    Enables searching through historical audit sessions by user or decision status.
+    Enables searching through historical audit sessions by user, decision status, or time range.
     """
     query = db.query(AgentSession)
     if user_id:
         query = query.filter(AgentSession.user_id == user_id)
     if status:
         query = query.filter(AgentSession.decision_status == status)
+    if start_time:
+        query = query.filter(AgentSession.created_at >= start_time)
+    if end_time:
+        query = query.filter(AgentSession.created_at <= end_time)
         
     sessions = query.order_by(AgentSession.created_at.desc()).all()
     return sessions
@@ -308,4 +314,21 @@ def explain_agent_decision(session_id: uuid.UUID, db: Session = Depends(get_db),
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate plain-English explanation: {str(e)}"
+        )
+
+@app.get("/audit/session/{session_id}/challenge-response", response_model=ExplanationResponse, tags=["Audit Registry"])
+def explain_regulatory_challenge(session_id: uuid.UUID, db: Session = Depends(get_db), api_key: str = Depends(validate_api_key)):
+    """Fulfills the Regulatory Challenge Response Generator (Bonus Feature).
+    Generates a formal compliance audit defense letter explaining the underwriting details.
+    """
+    try:
+        explanation = generate_challenge_response(session_id=session_id, db=db)
+        return ExplanationResponse(
+            session_id=session_id,
+            explanation=explanation
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate regulatory compliance defense letter: {str(e)}"
         )

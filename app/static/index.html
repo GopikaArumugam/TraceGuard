@@ -357,10 +357,10 @@
         }
 
         .explanation-text {
-            font-size: 15px;
+            font-size: 14px;
             line-height: 1.6;
             color: #f3f4f6;
-            white-space: normal;
+            white-space: pre-wrap;
             word-wrap: break-word;
         }
 
@@ -673,9 +673,15 @@
                 <div class="details-grid">
                     <!-- LLM Explanation Card -->
                     <div class="explanation-card">
-                        <div class="card-title">LLM Decision Summary (Plain-English)</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+                            <div class="card-title" style="margin-bottom: 0;">Explainability Intelligence</div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-secondary" id="btnExplainCustomer" onclick="showExplanationMode('customer')" style="font-size: 11px; padding: 4px 10px; background: rgba(139, 92, 246, 0.2); border-color: var(--primary-accent);">Customer Summary</button>
+                                <button class="btn btn-secondary" id="btnExplainRegulator" onclick="showExplanationMode('regulator')" style="font-size: 11px; padding: 4px 10px;">Regulator Draft (Bonus)</button>
+                            </div>
+                        </div>
                         <div class="explanation-text" id="explanationText">
-                            Loading AI explanation...
+                            Select a session to load AI explanation...
                         </div>
                     </div>
                     
@@ -765,6 +771,11 @@
             }
         };
 
+        let activeSessionId = null;
+        let cacheExplanationCustomer = "";
+        let cacheExplanationRegulator = "";
+        let activeExplanationMode = "customer";
+
         function applyPreset(val) {
             if (val === "custom") return;
             const data = presets[val];
@@ -798,11 +809,9 @@
             const btn = document.getElementById('evalBtn');
             const originalText = btn.innerHTML;
             
-            // Set loading state
             btn.disabled = true;
             btn.innerHTML = `<div class="spinner"></div> <span>Processing Agent Loop...</span>`;
 
-            // Read variables directly from form for dynamic testing!
             const payload = {
                 user_id: document.getElementById('evalUserId').value.trim(),
                 email: document.getElementById('evalEmail').value.trim(),
@@ -817,7 +826,7 @@
                 employment_status: document.getElementById('evalStatus').value,
                 length_of_employment_years: parseFloat(document.getElementById('evalJobLength').value),
 
-                // Policy configurations (Change the agent itself!)
+                // Policy configurations
                 credit_score_threshold: parseInt(document.getElementById('policyMinScore').value),
                 max_dti_ratio: parseFloat(document.getElementById('policyMaxDti').value) / 100,
                 min_employment_years: parseFloat(document.getElementById('policyMinJob').value),
@@ -837,11 +846,8 @@
                 }
                 
                 const data = await response.json();
-                
-                // Refresh list
                 await fetchSessions();
                 
-                // Highlight and select the new session
                 const items = document.querySelectorAll('.session-item');
                 if (items.length > 0) {
                     selectSession(data.session_id, items[0]);
@@ -915,8 +921,64 @@
             document.getElementById('activeSessionId').innerText = sessionId;
             document.getElementById('explanationText').innerText = "Querying Gemini for explanation...";
 
+            activeSessionId = sessionId;
+            cacheExplanationCustomer = "";
+            cacheExplanationRegulator = "";
+            
+            showExplanationMode('customer', false);
+
             fetchTimeline(sessionId);
-            fetchExplanation(sessionId);
+            loadExplanations(sessionId);
+        }
+
+        async function loadExplanations(sessionId) {
+            // Fetch customer explanation
+            try {
+                const response = await fetch(`/audit/session/${sessionId}/explain`, { headers: getHeaders() });
+                const data = await response.json();
+                cacheExplanationCustomer = data.explanation;
+                if (activeExplanationMode === "customer") {
+                    document.getElementById('explanationText').innerText = cacheExplanationCustomer;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+
+            // Fetch regulator draft
+            try {
+                const response = await fetch(`/audit/session/${sessionId}/challenge-response`, { headers: getHeaders() });
+                const data = await response.json();
+                cacheExplanationRegulator = data.explanation;
+                if (activeExplanationMode === "regulator") {
+                    document.getElementById('explanationText').innerText = cacheExplanationRegulator;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function showExplanationMode(mode, updateUI = true) {
+            activeExplanationMode = mode;
+            const btnCust = document.getElementById('btnExplainCustomer');
+            const btnReg = document.getElementById('btnExplainRegulator');
+
+            if (mode === 'customer') {
+                btnCust.style.background = "rgba(139, 92, 246, 0.2)";
+                btnCust.style.borderColor = "var(--primary-accent)";
+                btnReg.style.background = "rgba(255, 255, 255, 0.03)";
+                btnReg.style.borderColor = "var(--border-color)";
+                if (updateUI) {
+                    document.getElementById('explanationText').innerText = cacheExplanationCustomer || "Fetching customer summary...";
+                }
+            } else {
+                btnReg.style.background = "rgba(139, 92, 246, 0.2)";
+                btnReg.style.borderColor = "var(--primary-accent)";
+                btnCust.style.background = "rgba(255, 255, 255, 0.03)";
+                btnCust.style.borderColor = "var(--border-color)";
+                if (updateUI) {
+                    document.getElementById('explanationText').innerText = cacheExplanationRegulator || "Generating formal regulatory compliance defense letter...";
+                }
+            }
         }
 
         async function fetchTimeline(sessionId) {
@@ -935,17 +997,6 @@
                 renderTimeline(data.timeline);
             } catch (err) {
                 console.error("Error fetching timeline:", err);
-            }
-        }
-
-        async function fetchExplanation(sessionId) {
-            try {
-                const response = await fetch(`/audit/session/${sessionId}/explain`, { headers: getHeaders() });
-                const data = await response.json();
-                document.getElementById('explanationText').innerText = data.explanation;
-            } catch (err) {
-                document.getElementById('explanationText').innerText = "Failed to load explanation.";
-                console.error("Error fetching explanation:", err);
             }
         }
 

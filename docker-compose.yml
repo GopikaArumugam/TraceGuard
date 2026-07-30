@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # 1. Production PostgreSQL database container
+  db:
+    image: postgres:15-alpine
+    container_name: audit_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: audit_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d audit_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. FastAPI application container
+  web:
+    build: .
+    container_name: loan_auditor_api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres_password@db:5432/audit_db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
