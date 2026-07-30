@@ -7,7 +7,8 @@ from app.models import DecisionStep, AgentSession
 
 def generate_decision_summary(session_id: UUID, db: Session) -> str:
     """Retrieves redacted audit steps and generates a plain-English explanation.
-    Targets only the verified working model with automatic retry loops.
+    Implements a multi-provider failover pool: tries Gemini first, and automatically
+    swaps to Groq (Llama 3.1) if Gemini is rate-limited or busy.
     """
     # 1. Fetch session metadata
     session = db.query(AgentSession).filter(AgentSession.session_id == session_id).first()
@@ -53,42 +54,67 @@ def generate_decision_summary(session_id: UUID, db: Session) -> str:
     Plain-English Explanation:
     """
 
-    # 5. Model routing logic
-    model_name = None
-    api_key = None
+    # 5. Model pool routing logic
+    model_pool = []
     
+    # Priority 1: Gemini
     if settings.GEMINI_API_KEY:
-        model_name = "gemini/gemini-3.5-flash"
-        api_key = settings.GEMINI_API_KEY
-    elif settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "mock-key":
-        model_name = "openai/gpt-4o-mini"
-        api_key = settings.OPENAI_API_KEY
+        model_pool.append({
+            "model": "gemini/gemini-3.5-flash",
+            "api_key": settings.GEMINI_API_KEY
+        })
+    
+    # Priority 2: Groq
+    if settings.GROQ_API_KEY:
+        model_pool.append({
+            "model": "groq/llama-3.1-8b-instant",
+            "api_key": settings.GROQ_API_KEY
+        })
+        
+    # Priority 3: OpenAI
+    if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "mock-key":
+        model_pool.append({
+            "model": "openai/gpt-4o-mini",
+            "api_key": settings.OPENAI_API_KEY
+        })
 
-    if not model_name:
+    if not model_pool:
         raise ValueError("Strict Mode Active: No active LLM API keys configured.")
 
     explanation = ""
     last_err = None
-    max_retries = 3
 
-    # Execute retry loops strictly on the configured model
-    for attempt in range(max_retries):
-        try:
-            response = completion(
-                model=model_name,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,
-                api_key=api_key
-            )
-            explanation = response.choices[0].message.content.strip()
+    # Execute routing through the pool
+    for item in model_pool:
+        model_name = item["model"]
+        api_key = item["api_key"]
+        
+        # Retry logic per provider for transient errors
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                response = completion(
+                    model=model_name,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.3,
+                    api_key=api_key
+                )
+                explanation = response.choices[0].message.content.strip()
+                break
+            except Exception as e:
+                last_err = e
+                # Wait and retry for 503 errors
+                if "503" in str(e) or "overloaded" in str(e).lower():
+                    wait_time = 2 ** attempt
+                    print(f"Warning: Summarizer model {model_name} failed ({str(e)}). Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    break
+        
+        if explanation:
             break
-        except Exception as e:
-            last_err = e
-            if attempt < max_retries - 1:
-                wait_time = 2 ** attempt
-                print(f"Warning: Summarizer model {model_name} failed ({str(e)}). Retrying in {wait_time}s...")
-                time.sleep(wait_time)
-            else:
-                raise e
+    else:
+        # Triggered if all models in the pool failed
+        raise last_err
         
     return explanation

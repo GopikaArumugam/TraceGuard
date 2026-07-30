@@ -80,7 +80,8 @@ def check_debts_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any
 
 def make_decision_node(state: AgentState) -> Dict[str, Any]:
     """Node 3: Analyze information and make a decision using LLM reasoning.
-    Targets only the verified working model with automatic retry loops.
+    Implements a multi-provider failover pool: tries Gemini first, and automatically
+    swaps to Groq (Llama 3.1) if Gemini is rate-limited or busy.
     """
     credit = state["credit_score"]
     debts = state["active_debts"]
@@ -106,43 +107,70 @@ def make_decision_node(state: AgentState) -> Dict[str, Any]:
     Decision: <APPROVED or DENIED>
     """
     
-    model_name = None
-    api_key = None
+    # Compile candidate list of models based on active keys
+    model_pool = []
     
+    # Priority 1: Gemini (User's primary selection)
     if settings.GEMINI_API_KEY:
-        model_name = "gemini/gemini-3.5-flash"
-        api_key = settings.GEMINI_API_KEY
-    elif settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "mock-key":
-        model_name = "openai/gpt-4o-mini"
-        api_key = settings.OPENAI_API_KEY
+        model_pool.append({
+            "model": "gemini/gemini-3.5-flash",
+            "api_key": settings.GEMINI_API_KEY
+        })
+    
+    # Priority 2: Groq / Llama (Free high-availability backup)
+    if settings.GROQ_API_KEY:
+        model_pool.append({
+            "model": "groq/llama-3.1-8b-instant",
+            "api_key": settings.GROQ_API_KEY
+        })
         
-    if not model_name:
-        raise ValueError("Strict Mode Active: No active LLM API keys configured.")
+    # Priority 3: OpenAI (Paid option)
+    if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "mock-key":
+        model_pool.append({
+            "model": "openai/gpt-4o-mini",
+            "api_key": settings.OPENAI_API_KEY
+        })
+        
+    if not model_pool:
+        raise ValueError("Strict Mode Active: No active LLM API keys configured. Please add GEMINI_API_KEY or GROQ_API_KEY to your .env file.")
         
     content = ""
     last_err = None
-    max_retries = 3
     
-    # Execute retry loops strictly on the configured model
-    for attempt in range(max_retries):
-        try:
-            response = completion(
-                model=model_name,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.0,
-                api_key=api_key
-            )
-            content = response.choices[0].message.content.strip()
+    # Execute routing through the pool
+    for item in model_pool:
+        model_name = item["model"]
+        api_key = item["api_key"]
+        
+        # Retry logic per provider for transient errors
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                response = completion(
+                    model=model_name,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.0,
+                    api_key=api_key
+                )
+                content = response.choices[0].message.content.strip()
+                break
+            except Exception as e:
+                last_err = e
+                # If a 503 capacity limit is reached, wait and retry
+                if "503" in str(e) or "overloaded" in str(e).lower():
+                    wait_time = 2 ** attempt
+                    print(f"Warning: Model {model_name} is busy. Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    # For other errors, skip directly to failover model
+                    break
+        
+        # If we got a successful response from this provider, stop the failover loop
+        if content:
             break
-        except Exception as e:
-            last_err = e
-            # Only wait and retry if it's a 503 or temporary rate limit
-            if attempt < max_retries - 1:
-                wait_time = 2 ** attempt
-                print(f"Warning: Model {model_name} failed ({str(e)}). Retrying in {wait_time}s (Attempt {attempt+1}/{max_retries})...")
-                time.sleep(wait_time)
-            else:
-                raise e
+    else:
+        # If all providers in the pool failed
+        raise last_err
     
     thoughts = "Underwriting evaluation complete."
     decision = "DENIED"

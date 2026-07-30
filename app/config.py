@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = "mock-key"
     ANTHROPIC_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
     
     # Database Settings
     DATABASE_URL: str = "sqlite:///./audit_logs.db"

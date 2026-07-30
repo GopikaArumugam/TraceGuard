@@ -19,12 +19,26 @@ from app.agent import agent_executor
 from app.callbacks import AuditCallbackHandler
 from app.summarizer import generate_decision_summary
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
+
 # Initialize FastAPI application
 app = FastAPI(
     title="Loan Underwriting Decision Path Auditor",
     description="Compliance logging, PII masking, and LLM explanation service for Loan Approver Agents.",
     version="1.0.0"
 )
+
+# Mount static files folder
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+@app.get("/", response_class=FileResponse, tags=["Dashboard"])
+def read_index():
+    """Serves the front-end dashboard homepage.
+    """
+    return os.path.join(static_dir, "index.html")
 
 # Create SQL database tables on startup (SQLite migrations fallback)
 @app.on_event("startup")
