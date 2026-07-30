@@ -1,3 +1,4 @@
+import time
 from sqlalchemy.orm import Session
 from uuid import UUID
 from litellm import completion
@@ -5,8 +6,8 @@ from app.config import settings
 from app.models import DecisionStep, AgentSession
 
 def generate_decision_summary(session_id: UUID, db: Session) -> str:
-    """Retrieves redacted audit steps and generates a plain-English explanation of the decision.
-    Strictly dependent on the LLM. If keys are missing, the system will raise an error.
+    """Retrieves redacted audit steps and generates a plain-English explanation.
+    Targets only the verified working model with automatic retry loops.
     """
     # 1. Fetch session metadata
     session = db.query(AgentSession).filter(AgentSession.session_id == session_id).first()
@@ -57,21 +58,37 @@ def generate_decision_summary(session_id: UUID, db: Session) -> str:
     api_key = None
     
     if settings.GEMINI_API_KEY:
-        model_name = "gemini/gemini-1.5-flash"
+        model_name = "gemini/gemini-3.5-flash"
         api_key = settings.GEMINI_API_KEY
     elif settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "mock-key":
         model_name = "openai/gpt-4o-mini"
         api_key = settings.OPENAI_API_KEY
 
     if not model_name:
-        raise ValueError("Strict Mode Active: No active LLM API keys configured. Set GEMINI_API_KEY or OPENAI_API_KEY.")
+        raise ValueError("Strict Mode Active: No active LLM API keys configured.")
 
-    response = completion(
-        model=model_name,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        api_key=api_key
-    )
-    explanation = response.choices[0].message.content.strip()
-    
+    explanation = ""
+    last_err = None
+    max_retries = 3
+
+    # Execute retry loops strictly on the configured model
+    for attempt in range(max_retries):
+        try:
+            response = completion(
+                model=model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                api_key=api_key
+            )
+            explanation = response.choices[0].message.content.strip()
+            break
+        except Exception as e:
+            last_err = e
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt
+                print(f"Warning: Summarizer model {model_name} failed ({str(e)}). Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                raise e
+        
     return explanation

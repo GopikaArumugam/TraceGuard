@@ -54,7 +54,7 @@ class PIIRedactor:
             cleaned_dict = {}
             for key, val in data.items():
                 key_lower = key.lower()
-                if key_lower in ["name", "first_name", "last_name", "fullname"]:
+                if key_lower in ["name", "first_name", "last_name", "fullname", "full_name"]:
                     cleaned_dict[key] = "[NAME_REDACTED]"
                 elif key_lower in ["password", "secret", "cvv", "pin"]:
                     cleaned_dict[key] = "[SECRET_REDACTED]"
