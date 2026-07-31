@@ -33,22 +33,20 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
+            height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            overflow: hidden;
             background-image: 
                 radial-gradient(circle at 5% 10%, rgba(99, 102, 241, 0.05) 0%, transparent 35%),
                 radial-gradient(circle at 95% 90%, rgba(139, 92, 246, 0.06) 0%, transparent 40%);
         }
 
         header {
-            padding: 20px 40px;
+            padding: 16px 40px;
             border-bottom: 1px solid var(--border-color);
             background: rgba(11, 15, 25, 0.8);
             backdrop-filter: blur(12px);
-            position: sticky;
-            top: 0;
             z-index: 100;
             display: flex;
             justify-content: space-between;
@@ -80,14 +78,16 @@
         }
 
         .container {
-            max-width: 1500px;
+            max-width: 1550px;
             width: 100%;
             margin: 0 auto;
-            padding: 24px 40px;
+            padding: 20px 40px;
             display: grid;
             grid-template-columns: 460px 1fr;
             gap: 24px;
-            flex-grow: 1;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
         }
 
         /* Glassmorphic Panel Base */
@@ -101,8 +101,10 @@
             display: flex;
             flex-direction: column;
             gap: 18px;
-            height: fit-content;
+            height: 100%;
+            max-height: 100%;
             min-width: 0;
+            overflow-y: auto;
         }
 
         .search-title {
@@ -422,6 +424,16 @@
             color: white;
         }
 
+        .step-icon-svg {
+            width: 10px;
+            height: 10px;
+            color: var(--text-secondary);
+        }
+
+        .timeline-node.active .timeline-icon .step-icon-svg {
+            color: white;
+        }
+
         .timeline-content {
             background: rgba(255, 255, 255, 0.012);
             border: 1px solid var(--border-color);
@@ -510,9 +522,9 @@
     <header>
         <div class="logo-container">
             <div class="logo-icon"></div>
-            <h1>Loan Approver Control Center</h1>
+            <h1>Decision Path Auditor Console</h1>
         </div>
-        <span class="badge approved" style="padding: 6px 14px; letter-spacing: 0.5px;">LLM Secured</span>
+        <span class="badge approved" style="padding: 6px 14px; letter-spacing: 0.5px;">Universal Governance</span>
     </header>
 
     <div class="container">
@@ -529,110 +541,163 @@
             
             <div style="border-top: 1px solid var(--border-color); margin: 2px 0;"></div>
 
-            <!-- 2. Run Loan Evaluation Form -->
+            <!-- 2. Run Agent Selection & Form -->
             <div class="search-section">
-                <h2 class="search-title">Evaluate New Applicant</h2>
+                <h2 class="search-title">Governance Evaluation Registry</h2>
                 
-                <!-- Preset Templates Selection -->
-                <div class="form-group">
-                    <label class="form-label">Scenario Presets</label>
-                    <select id="scenarioPresets" class="search-input" onchange="applyPreset(this.value)" style="background: #111827; color: #c084fc; font-weight: 600;">
-                        <option value="usr_qualified">Approved: Fully Qualified Presets</option>
-                        <option value="usr_low">Denied: Credit Score Failure (< 580)</option>
-                        <option value="usr_unemployed">Denied: Unemployed Status</option>
-                        <option value="usr_new_job">Denied: Short Job Length (< 1 Year)</option>
-                        <option value="usr_missed_payments">Denied: Missed Payment History</option>
-                        <option value="usr_high_debt">Denied: Excessive DTI Debt Ratio</option>
-                        <option value="custom">-- Custom User Config (Manual Edit) --</option>
+                <!-- Agent Selector (Loan / HR / Refund) -->
+                <div class="form-group" style="margin-bottom: 8px;">
+                    <label class="form-label" style="color: #a78bfa; font-weight: 700;">Select Target Agent to Audit</label>
+                    <select id="agentTypeSelect" class="search-input" onchange="toggleAgentUI(this.value)" style="background: #1e1b4b; border-color: #8b5cf6; color: #f3f4f6; font-weight: 600;">
+                        <option value="loan">Lending Underwriter Agent (Active Live)</option>
+                        <option value="hr">HR Leave Approval Agent (Simulated)</option>
+                        <option value="refund">Customer Support Refund Agent (Simulated)</option>
                     </select>
                 </div>
 
-                <!-- Form Inputs -->
-                <div class="form-row">
+                <!-- 2.A LOAN AGENT FORM CONTAINER -->
+                <div id="loanInputsContainer" style="display: flex; flex-direction: column; gap: 12px;">
+                    <!-- Preset Templates Selection -->
                     <div class="form-group">
-                        <label class="form-label">User ID (Auditor Target)</label>
-                        <input type="text" id="evalUserId" class="search-input" value="usr_qualified">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Requested Loan ($)</label>
-                        <input type="number" id="evalAmount" class="search-input" value="10000">
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Credit Score</label>
-                        <input type="number" id="evalCreditScore" class="search-input" value="740" min="300" max="850">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Monthly Gross Income ($)</label>
-                        <input type="number" id="evalIncome" class="search-input" value="9500">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Outstanding Debts ($)</label>
-                        <input type="number" id="evalDebts" class="search-input" value="1200">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Missed Payments (Last 12m)</label>
-                        <input type="number" id="evalMissedPayments" class="search-input" value="0" min="0">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Job Length (Years)</label>
-                        <input type="number" id="evalJobLength" class="search-input" value="3.5" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Employment Status</label>
-                        <select id="evalStatus" class="search-input" style="background: #111827; color: white;">
-                            <option value="Employed">Employed</option>
-                            <option value="Unemployed">Unemployed</option>
+                        <label class="form-label">Scenario Presets</label>
+                        <select id="scenarioPresets" class="search-input" onchange="applyPreset(this.value)" style="background: #111827; color: #c084fc; font-weight: 600;">
+                            <option value="usr_qualified">Approved: Fully Qualified Presets</option>
+                            <option value="usr_low">Denied: Credit Score Failure (< 580)</option>
+                            <option value="usr_unemployed">Denied: Unemployed Status</option>
+                            <option value="usr_new_job">Denied: Short Job Length (< 1 Year)</option>
+                            <option value="usr_missed_payments">Denied: Missed Payment History</option>
+                            <option value="usr_high_debt">Denied: Excessive DTI Debt Ratio</option>
+                            <option value="custom">-- Custom User Config (Manual Edit) --</option>
                         </select>
                     </div>
+
+                    <!-- Form Inputs -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">User ID (Auditor Target)</label>
+                            <input type="text" id="evalUserId" class="search-input" value="usr_qualified">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Requested Loan ($)</label>
+                            <input type="number" id="evalAmount" class="search-input" value="10000">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Credit Score</label>
+                            <input type="number" id="evalCreditScore" class="search-input" value="740" min="300" max="850">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Monthly Gross Income ($)</label>
+                            <input type="number" id="evalIncome" class="search-input" value="9500">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Outstanding Debts ($)</label>
+                            <input type="number" id="evalDebts" class="search-input" value="1200">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Missed Payments (Last 12m)</label>
+                            <input type="number" id="evalMissedPayments" class="search-input" value="0" min="0">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Job Length (Years)</label>
+                            <input type="number" id="evalJobLength" class="search-input" value="3.5" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Employment Status</label>
+                            <select id="evalStatus" class="search-input" style="background: #111827; color: white;">
+                                <option value="Employed">Employed</option>
+                                <option value="Unemployed">Unemployed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="text" id="evalEmail" class="search-input" value="customer.alice@gmail.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <input type="text" id="evalPhone" class="search-input" value="+1-555-0199">
+                        </div>
+                    </div>
+
+                    <!-- 2.5 Configurable Underwriting Policy -->
+                    <div style="border-top: 1px dashed var(--border-color); margin: 6px 0;"></div>
+                    <h2 class="search-title" style="color: #c084fc; font-size: 11px; letter-spacing: 0.5px;">Agent Underwriting Policy (Runtime Config)</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Min Credit Score</label>
+                            <input type="number" id="policyMinScore" class="search-input" value="580">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Max DTI Ratio (%)</label>
+                            <input type="number" id="policyMaxDti" class="search-input" value="45">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Min Job Length (Years)</label>
+                            <input type="number" id="policyMinJob" class="search-input" value="1.0" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Target LLM Brain</label>
+                            <select id="policyLLM" class="search-input" style="background: #111827; color: white;">
+                                <option value="gemini/gemini-3.5-flash">Gemini 3.5 Flash</option>
+                                <option value="groq/llama-3.1-8b-instant">Groq: Llama 3.1 8B</option>
+                                <option value="openai/gpt-4o-mini">OpenAI: GPT-4o Mini</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="form-row" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input type="text" id="evalEmail" class="search-input" value="customer.alice@gmail.com">
+                <!-- 2.B HR LEAVE AGENT FORM CONTAINER -->
+                <div id="hrInputsContainer" style="display: none; flex-direction: column; gap: 12px; margin-top: 10px;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Employee ID</label>
+                            <input type="text" id="hrEmployeeId" class="search-input" value="EMP-9921">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Leave Type</label>
+                            <select id="hrLeaveType" class="search-input" style="background: #111827; color: white;">
+                                <option value="Annual">Annual Leave</option>
+                                <option value="Sick">Sick Leave</option>
+                                <option value="Parental">Parental Leave</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Phone</label>
-                        <input type="text" id="evalPhone" class="search-input" value="+1-555-0199">
-                    </div>
-                </div>
-
-                <!-- 2.5 Configurable Underwriting Policy (Changes the Agent Rules at Runtime!) -->
-                <div style="border-top: 1px dashed var(--border-color); margin: 6px 0;"></div>
-                <h2 class="search-title" style="color: #c084fc; font-size: 11px; letter-spacing: 0.5px;">Agent Underwriting Policy (Runtime Config)</h2>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Min Credit Score</label>
-                        <input type="number" id="policyMinScore" class="search-input" value="580">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Max DTI Ratio (%)</label>
-                        <input type="number" id="policyMaxDti" class="search-input" value="45">
+                        <label class="form-label">Days Requested</label>
+                        <input type="number" id="hrLeaveDays" class="search-input" value="5" min="1">
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Min Job Length (Years)</label>
-                        <input type="number" id="policyMinJob" class="search-input" value="1.0" step="0.1">
+                <!-- 2.C SUPPORT REFUND AGENT FORM CONTAINER -->
+                <div id="refundInputsContainer" style="display: none; flex-direction: column; gap: 12px; margin-top: 10px;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Customer ID</label>
+                            <input type="text" id="refundCustomerId" class="search-input" value="usr_customer_88">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Order ID</label>
+                            <input type="text" id="refundOrderId" class="search-input" value="ORD-55419">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Target LLM Brain</label>
-                        <select id="policyLLM" class="search-input" style="background: #111827; color: white;">
-                            <option value="gemini/gemini-3.5-flash">Gemini 3.5 Flash</option>
-                            <option value="groq/llama-3.1-8b-instant">Groq: Llama 3.1 8B</option>
-                            <option value="openai/gpt-4o-mini">OpenAI: GPT-4o Mini</option>
-                        </select>
+                        <label class="form-label">Refund Value ($)</label>
+                        <input type="number" id="refundAmount" class="search-input" value="149.99" step="0.01">
                     </div>
                 </div>
 
@@ -698,7 +763,7 @@
 
             <!-- Placeholder Screen -->
             <div class="workspace-placeholder" id="placeholderScreen">
-                <span class="placeholder-icon">🛡️</span>
+                <svg style="width: 56px; height: 56px; color: rgba(139, 92, 246, 0.4); margin-bottom: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 <h3>Agent Decision Path Workspace</h3>
                 <p>Run a new AI evaluation above, or select a session from the Audit Registry to view its secure, redacted timeline.</p>
             </div>
@@ -797,6 +862,26 @@
             document.getElementById('policyLLM').selectedIndex = 0;
         }
 
+        function toggleAgentUI(agentType) {
+            const loanFields = document.getElementById('loanInputsContainer');
+            const hrFields = document.getElementById('hrInputsContainer');
+            const refundFields = document.getElementById('refundInputsContainer');
+            
+            if (agentType === 'loan') {
+                loanFields.style.display = 'flex';
+                hrFields.style.display = 'none';
+                refundFields.style.display = 'none';
+            } else if (agentType === 'hr') {
+                loanFields.style.display = 'none';
+                hrFields.style.display = 'flex';
+                refundFields.style.display = 'none';
+            } else {
+                loanFields.style.display = 'none';
+                hrFields.style.display = 'none';
+                refundFields.style.display = 'flex';
+            }
+        }
+
         function getHeaders() {
             const apiKey = document.getElementById('apiKeyInput').value.trim();
             return {
@@ -812,26 +897,41 @@
             btn.disabled = true;
             btn.innerHTML = `<div class="spinner"></div> <span>Processing Agent Loop...</span>`;
 
-            const payload = {
-                user_id: document.getElementById('evalUserId').value.trim(),
-                email: document.getElementById('evalEmail').value.trim(),
-                phone: document.getElementById('evalPhone').value.trim(),
-                requested_amount: parseFloat(document.getElementById('evalAmount').value),
-                
-                // Applicant overrides
-                credit_score: parseInt(document.getElementById('evalCreditScore').value),
-                debts_total: parseFloat(document.getElementById('evalDebts').value),
-                missed_payments_last_12m: parseInt(document.getElementById('evalMissedPayments').value),
-                monthly_gross_income: parseFloat(document.getElementById('evalIncome').value),
-                employment_status: document.getElementById('evalStatus').value,
-                length_of_employment_years: parseFloat(document.getElementById('evalJobLength').value),
-
-                // Policy configurations
-                credit_score_threshold: parseInt(document.getElementById('policyMinScore').value),
-                max_dti_ratio: parseFloat(document.getElementById('policyMaxDti').value) / 100,
-                min_employment_years: parseFloat(document.getElementById('policyMinJob').value),
-                llm_model: document.getElementById('policyLLM').value
+            const agentType = document.getElementById('agentTypeSelect').value;
+            let payload = {
+                agent_type: agentType,
+                email: "audit.simulation@apx.com",
+                phone: "+1-555-0100"
             };
+
+            if (agentType === 'loan') {
+                payload.user_id = document.getElementById('evalUserId').value.trim();
+                payload.email = document.getElementById('evalEmail').value.trim();
+                payload.phone = document.getElementById('evalPhone').value.trim();
+                payload.requested_amount = parseFloat(document.getElementById('evalAmount').value);
+                payload.credit_score = parseInt(document.getElementById('evalCreditScore').value);
+                payload.debts_total = parseFloat(document.getElementById('evalDebts').value);
+                payload.missed_payments_last_12m = parseInt(document.getElementById('evalMissedPayments').value);
+                payload.monthly_gross_income = parseFloat(document.getElementById('evalIncome').value);
+                payload.employment_status = document.getElementById('evalStatus').value;
+                payload.length_of_employment_years = parseFloat(document.getElementById('evalJobLength').value);
+                payload.credit_score_threshold = parseInt(document.getElementById('policyMinScore').value);
+                payload.max_dti_ratio = parseFloat(document.getElementById('policyMaxDti').value) / 100;
+                payload.min_employment_years = parseFloat(document.getElementById('policyMinJob').value);
+                payload.llm_model = document.getElementById('policyLLM').value;
+            } else if (agentType === 'hr') {
+                payload.user_id = document.getElementById('hrEmployeeId').value.trim();
+                payload.hr_employee_id = document.getElementById('hrEmployeeId').value.trim();
+                payload.hr_leave_type = document.getElementById('hrLeaveType').value;
+                payload.hr_leave_days = parseInt(document.getElementById('hrLeaveDays').value);
+                payload.requested_amount = parseFloat(payload.hr_leave_days);
+            } else {
+                payload.user_id = document.getElementById('refundCustomerId').value.trim();
+                payload.refund_customer_id = document.getElementById('refundCustomerId').value.trim();
+                payload.refund_order_id = document.getElementById('refundOrderId').value.trim();
+                payload.refund_amount = parseFloat(document.getElementById('refundAmount').value);
+                payload.requested_amount = payload.refund_amount;
+            }
 
             try {
                 const response = await fetch('/agent/run', {
@@ -1053,11 +1153,19 @@
                 const node = document.createElement('div');
                 node.className = 'timeline-node active';
 
-                let icon = 'ℹ️';
-                if (step.step_type === 'TOOL_CALL') icon = '🔧';
-                if (step.step_type === 'TOOL_OUTPUT') icon = '📦';
-                if (step.step_type === 'THOUGHT') icon = '🧠';
-                if (step.step_type === 'FINAL_DECISION') icon = '⚖️';
+                let icon = `<svg class="step-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
+                if (step.step_type === 'TOOL_CALL') {
+                    icon = `<svg class="step-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
+                }
+                if (step.step_type === 'TOOL_OUTPUT') {
+                    icon = `<svg class="step-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>`;
+                }
+                if (step.step_type === 'THOUGHT') {
+                    icon = `<svg class="step-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`;
+                }
+                if (step.step_type === 'FINAL_DECISION') {
+                    icon = `<svg class="step-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 11 2 2 4-4"/></svg>`;
+                }
 
                 const time = new Date(step.created_at).toLocaleTimeString();
                 

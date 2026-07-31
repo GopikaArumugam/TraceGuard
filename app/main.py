@@ -144,8 +144,224 @@ def health_check():
 def run_loan_agent(payload: LoanRequest, db: Session = Depends(get_db), api_key: str = Depends(validate_api_key)):
     """Triggers the Loan Approver Agent to evaluate a loan request.
     Auto-redacts PII and commits the detailed trace steps to the database.
+    Supports auditing different target agents (loan, medical, or trading).
     """
-    # 0. Check and upsert custom ApplicantProfile if custom parameters are provided
+    # 0. Routing for simulated HR Leave Approval Agent
+    # 0. Routing for simulated HR Leave Approval Agent
+    if payload.agent_type == "hr":
+        session_id = uuid.uuid4()
+        req_days = payload.hr_leave_days if payload.hr_leave_days is not None else 5
+        available_balance = 15
+        
+        # Dynamic policy evaluation check
+        if req_days > available_balance:
+            status_verdict = "DENIED"
+            final_out = f"Leave request of {req_days} days denied. Insufficient leave balance ({available_balance} days available)."
+            reasoning = f"Employee Jane Doe requested {req_days} days of {payload.hr_leave_type or 'Annual'} leave. Employee profile is active. Available balance is {available_balance} days, which is less than the requested {req_days} days. Policy check failed: Insufficient balance. Action: DENIED."
+            response_msg = "HR Leave request denied due to insufficient balance. DENIED."
+        else:
+            status_verdict = "APPROVED"
+            final_out = f"Leave request of {req_days} days approved under company HR leave policy."
+            reasoning = f"Employee Jane Doe requested {req_days} days of {payload.hr_leave_type or 'Annual'} leave. Employee profile is active. Available balance is {available_balance} days, which covers the requested {req_days} days. Team overlap analysis indicates a coverage ratio of 87.5% (above 75% policy threshold). Leave policy checks successfully passed. Action: APPROVED."
+            response_msg = "HR Leave audit complete. APPROVED."
+
+        session = AgentSession(
+            session_id=session_id,
+            user_id=payload.hr_employee_id or payload.user_id,
+            requested_amount=float(req_days),
+            decision_status=status_verdict,
+            final_output=final_out
+        )
+        steps = [
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_CALL",
+                name="validate_employee_record",
+                input_payload={"employee_id": payload.hr_employee_id or payload.user_id},
+                output_payload={}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_OUTPUT",
+                name="validate_employee_record",
+                input_payload={},
+                output_payload={"name": "Jane Doe", "department": "Engineering", "employment_status": "Active", "joining_date": "2023-03-15"}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_CALL",
+                name="fetch_leave_balance",
+                input_payload={"employee_id": payload.hr_employee_id or payload.user_id, "leave_type": payload.hr_leave_type or "Annual"},
+                output_payload={}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_OUTPUT",
+                name="fetch_leave_balance",
+                input_payload={},
+                output_payload={"annual_allocated": 25, "days_taken": 10, "current_balance": available_balance}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_CALL",
+                name="check_team_availability",
+                input_payload={"department": "Engineering", "start_date": "2026-08-10", "end_date": "2026-08-15"},
+                output_payload={}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_OUTPUT",
+                name="check_team_availability",
+                input_payload={},
+                output_payload={"active_team_members": 8, "overlapping_leaves_count": 1, "coverage_ratio": 0.875}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="THOUGHT",
+                name="policy_evaluation",
+                input_payload={"logic_reasoning": reasoning},
+                output_payload={}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="FINAL_DECISION",
+                name="leave_verdict",
+                input_payload={},
+                output_payload={"status": status_verdict, "approved_days": req_days if status_verdict == "APPROVED" else 0}
+            )
+        ]
+        try:
+            db.add(session)
+            for s in steps:
+                db.add(s)
+            db.commit()
+            return LoanResponse(
+                session_id=session_id,
+                status=status_verdict,
+                message=response_msg
+            )
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to execute HR agent: {str(e)}"
+            )
+
+    # 0.1 Routing for simulated Customer Support Refund Agent
+    elif payload.agent_type == "refund":
+        session_id = uuid.uuid4()
+        ref_amt = payload.refund_amount if payload.refund_amount is not None else 149.99
+        max_allowed_refund = 250.00
+        
+        # Dynamic policy evaluation check
+        if ref_amt > max_allowed_refund:
+            status_verdict = "DENIED"
+            final_out = f"Refund request of ${ref_amt} denied. Refund value exceeds automated threshold limit of ${max_allowed_refund}."
+            reasoning = f"Customer Robert Johnson requested a refund of ${ref_amt} for order 'ORD-55419'. The transaction is settled. However, the requested refund amount exceeds the automated threshold limit of ${max_allowed_refund}. Policy check failed: Requires manual manager oversight. Action: DENIED."
+            response_msg = "Refund request denied. Transaction value exceeds automated check thresholds."
+        else:
+            status_verdict = "APPROVED"
+            final_out = f"Refund request of ${ref_amt} approved under consumer return safety guidelines."
+            reasoning = f"Customer Robert Johnson requested a refund of ${ref_amt} for order 'ORD-55419'. The order was delivered on 2026-07-28 (within the 30-day window). Payment transaction TXN_7744112 is settled. Fraud check score is low (12/100). Refund matches our customer satisfaction guarantee. Action: APPROVED."
+            response_msg = "Refund risk audit complete. APPROVED."
+
+        session = AgentSession(
+            session_id=session_id,
+            user_id=payload.refund_customer_id or payload.user_id,
+            requested_amount=ref_amt,
+            decision_status=status_verdict,
+            final_output=final_out
+        )
+        steps = [
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_CALL",
+                name="validate_customer_account",
+                input_payload={"customer_id": payload.refund_customer_id or payload.user_id},
+                output_payload={}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_OUTPUT",
+                name="validate_customer_account",
+                input_payload={},
+                output_payload={"name": "Robert Johnson", "account_status": "Active", "account_level": "Premium", "trust_score": 98}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_CALL",
+                name="retrieve_order_details",
+                input_payload={"order_id": payload.refund_order_id or "ORD-55419", "customer_id": payload.refund_customer_id or payload.user_id},
+                output_payload={}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_OUTPUT",
+                name="retrieve_order_details",
+                input_payload={},
+                output_payload={"purchase_date": "2026-07-28", "items_count": 2, "total_value": ref_amt, "delivery_status": "Delivered"}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_CALL",
+                name="verify_payment_transaction",
+                input_payload={"order_id": payload.refund_order_id or "ORD-55419", "payment_method": "Credit Card"},
+                output_payload={}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_OUTPUT",
+                name="verify_payment_transaction",
+                input_payload={},
+                output_payload={"transaction_id": "TXN_7744112", "charge_status": "Settled", "disputed": False}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_CALL",
+                name="evaluate_fraud_risk",
+                input_payload={"customer_id": payload.refund_customer_id or payload.user_id, "refund_amount": ref_amt},
+                output_payload={}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="TOOL_OUTPUT",
+                name="evaluate_fraud_risk",
+                input_payload={},
+                output_payload={"fraud_risk_score": 12, "flagged": False}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="THOUGHT",
+                name="refund_policy_check",
+                input_payload={"logic_reasoning": reasoning},
+                output_payload={}
+            ),
+            DecisionStep(
+                session_id=session_id,
+                step_type="FINAL_DECISION",
+                name="refund_verdict",
+                input_payload={},
+                output_payload={"status": status_verdict, "refunded_amount": ref_amt if status_verdict == "APPROVED" else 0.0}
+            )
+        ]
+        try:
+            db.add(session)
+            for s in steps:
+                db.add(s)
+            db.commit()
+            return LoanResponse(
+                session_id=session_id,
+                status=status_verdict,
+                message=response_msg
+            )
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to execute Customer Support refund agent: {str(e)}"
+            )
+
+    # 0.2 Check and upsert custom ApplicantProfile if custom parameters are provided
     if any(v is not None for v in [
         payload.credit_score,
         payload.debts_total,

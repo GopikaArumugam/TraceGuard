@@ -24,6 +24,15 @@ class LoanRequest(BaseModel):
     min_employment_years: Optional[float] = Field(None, description="Underwriting min job history threshold in years (default: 1.0)")
     llm_model: Optional[str] = Field(None, description="LLM brain model target name override (default: gemini/gemini-3.5-flash)")
 
+    # Multi-Agent Orchestration Target
+    agent_type: Optional[str] = Field("loan", description="Target agent to evaluate: loan, hr, or refund")
+    hr_employee_id: Optional[str] = Field(None, description="Employee ID for HR Leave Agent")
+    hr_leave_type: Optional[str] = Field(None, description="Leave type target: Annual, Sick, Parental")
+    hr_leave_days: Optional[int] = Field(None, description="Number of requested leave days")
+    refund_customer_id: Optional[str] = Field(None, description="Customer ID for Support Refund Agent")
+    refund_order_id: Optional[str] = Field(None, description="Order ID to evaluate for refund")
+    refund_amount: Optional[float] = Field(None, description="Total requested refund value")
+
 # 2. Output response returned immediately after agent processing
 class LoanResponse(BaseModel):
     session_id: UUID = Field(..., description="Unique audit session identifier")
