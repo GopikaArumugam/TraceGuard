@@ -1,6 +1,6 @@
 import uuid
-from datetime import datetime
-from sqlalchemy import Column, String, Float, DateTime, ForeignKey, JSON, Text, Integer
+from datetime import datetime, date
+from sqlalchemy import Column, String, Float, DateTime, ForeignKey, JSON, Text, Integer, Boolean, Date
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.types import TypeDecorator, CHAR
 from app.db import Base
@@ -71,3 +71,57 @@ class ApplicantProfile(Base):
     length_of_employment_years = Column(Float, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+
+# ---------------------------------------------------------------------------
+# HR Agent Tables
+# ---------------------------------------------------------------------------
+class EmployeeRecord(Base):
+    """Stores employee HR records used by the HR Leave Approval Agent."""
+    __tablename__ = "employee_records"
+
+    employee_id = Column(String(50), primary_key=True)
+    full_name = Column(String(150), nullable=False)
+    department = Column(String(100), nullable=False)
+    employment_status = Column(String(50), nullable=False)  # Active / Inactive / On Probation
+    joining_date = Column(Date, nullable=False)
+
+
+class LeaveRecord(Base):
+    """Stores leave balance records per employee per leave type."""
+    __tablename__ = "leave_records"
+
+    record_id = Column(Integer, primary_key=True, autoincrement=True)
+    employee_id = Column(String(50), ForeignKey("employee_records.employee_id", ondelete="CASCADE"), nullable=False, index=True)
+    leave_type = Column(String(50), nullable=False)  # Annual / Sick / Parental / Casual
+    annual_allocated = Column(Integer, nullable=False)
+    days_taken = Column(Integer, nullable=False, default=0)
+    currently_on_leave = Column(Boolean, default=False)
+
+
+# ---------------------------------------------------------------------------
+# Refund Agent Tables
+# ---------------------------------------------------------------------------
+class CustomerAccount(Base):
+    """Stores customer CRM records used by the Customer Support Refund Agent."""
+    __tablename__ = "customer_accounts"
+
+    customer_id = Column(String(50), primary_key=True)
+    full_name = Column(String(150), nullable=False)
+    account_status = Column(String(50), nullable=False)  # Active / Suspended / Closed
+    account_tier = Column(String(50), nullable=False)    # Standard / Premium / VIP
+    trust_score = Column(Integer, nullable=False)        # 0-100
+    prior_refund_count = Column(Integer, nullable=False, default=0)
+
+
+class OrderRecord(Base):
+    """Stores order records used by the Customer Support Refund Agent."""
+    __tablename__ = "order_records"
+
+    order_id = Column(String(50), primary_key=True)
+    customer_id = Column(String(50), ForeignKey("customer_accounts.customer_id", ondelete="CASCADE"), nullable=False, index=True)
+    purchase_date = Column(Date, nullable=False)
+    delivery_status = Column(String(50), nullable=False)  # Delivered / Pending / Returned
+    total_value = Column(Float, nullable=False)
+    payment_method = Column(String(50), nullable=False)
+    days_since_purchase = Column(Integer, nullable=False)
+    fraud_risk_score = Column(Integer, nullable=False, default=10)  # 0-100

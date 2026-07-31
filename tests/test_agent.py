@@ -2,7 +2,7 @@ import uuid
 import pytest
 from app.db import SessionLocal, Base, engine
 from app.models import AgentSession, DecisionStep, ApplicantProfile
-from app.agent import agent_executor
+from app.agents.loan_agent import agent_executor
 from app.callbacks import AuditCallbackHandler
 from app.main import seed_database_profiles
 
