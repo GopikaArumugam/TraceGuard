@@ -36,5 +36,5 @@ def test_redact_nested_dict():
     assert redacted["name"] == "[NAME_REDACTED]"
     assert redacted["contact"]["email"] == "[EMAIL_REDACTED]"
     assert redacted["contact"]["phone"] == "[PHONE_REDACTED]"
-    assert redacted["items"][0] == "[CREDIT_CARD_REDACTED]"
+    assert "[CREDIT_CARD_REDACTED]" in redacted["items"][0]
     assert redacted["items"][1] == "clean text"

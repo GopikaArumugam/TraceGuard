@@ -51,10 +51,88 @@ def read_index():
     """
     return os.path.join(static_dir, "index.html")
 
+def seed_database_profiles(db: Session):
+    """Pre-populates the database with the 6 standard loan applicant profiles 
+    to make the testing dataset 100% database-driven and remove code fallbacks.
+    """
+    count = db.query(ApplicantProfile).count()
+    if count > 0:
+        return
+        
+    presets = [
+        ApplicantProfile(
+            user_id="usr_qualified",
+            credit_score=740,
+            monthly_gross_income=9500.0,
+            debts_total=1200.0,
+            missed_payments_last_12m=0,
+            employment_status="Employed",
+            length_of_employment_years=3.5
+        ),
+        ApplicantProfile(
+            user_id="usr_low",
+            credit_score=500,
+            monthly_gross_income=1500.0,
+            debts_total=8000.0,
+            missed_payments_last_12m=0,
+            employment_status="Employed",
+            length_of_employment_years=4.5
+        ),
+        ApplicantProfile(
+            user_id="usr_unemployed",
+            credit_score=680,
+            monthly_gross_income=0.0,
+            debts_total=1000.0,
+            missed_payments_last_12m=0,
+            employment_status="Unemployed",
+            length_of_employment_years=0.0
+        ),
+        ApplicantProfile(
+            user_id="usr_new_job",
+            credit_score=690,
+            monthly_gross_income=4500.0,
+            debts_total=1500.0,
+            missed_payments_last_12m=0,
+            employment_status="Employed",
+            length_of_employment_years=0.4
+        ),
+        ApplicantProfile(
+            user_id="usr_missed_payments",
+            credit_score=710,
+            monthly_gross_income=5000.0,
+            debts_total=2000.0,
+            missed_payments_last_12m=2,
+            employment_status="Employed",
+            length_of_employment_years=2.5
+        ),
+        ApplicantProfile(
+            user_id="usr_high_debt",
+            credit_score=620,
+            monthly_gross_income=3000.0,
+            debts_total=6500.0,
+            missed_payments_last_12m=0,
+            employment_status="Employed",
+            length_of_employment_years=3.0
+        )
+    ]
+    
+    try:
+        db.add_all(presets)
+        db.commit()
+        print("Database seeding completed successfully. Added 6 base applicant profiles.")
+    except Exception as e:
+        db.rollback()
+        print(f"Warning: Database seeding failed: {str(e)}")
+
 # Create SQL database tables on startup (SQLite migrations fallback)
 @app.on_event("startup")
 def startup_event():
     Base.metadata.create_all(bind=engine)
+    db = next(get_db())
+    try:
+        seed_database_profiles(db)
+    finally:
+        db.close()
 
 @app.get("/health", status_code=status.HTTP_200_OK, tags=["System"])
 def health_check():

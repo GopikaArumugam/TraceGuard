@@ -912,6 +912,51 @@
             });
         }
 
+        function formatMarkdownToHTML(text) {
+            if (!text) return "";
+            let html = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+                
+            // Convert bold **text** to <strong>text</strong>
+            html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+            
+            // Convert bullet points "* item" or "- item" to list items
+            let lines = html.split("\n");
+            let inList = false;
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (line.startsWith("* ")) {
+                    let itemText = line.substring(2);
+                    if (!inList) {
+                        lines[i] = '<ul style="margin-left: 20px; margin-bottom: 8px; list-style-type: disc;"><li>' + itemText + '</li>';
+                        inList = true;
+                    } else {
+                        lines[i] = '<li>' + itemText + '</li>';
+                    }
+                } else if (line.startsWith("- ")) {
+                    let itemText = line.substring(2);
+                    if (!inList) {
+                        lines[i] = '<ul style="margin-left: 20px; margin-bottom: 8px; list-style-type: square;"><li>' + itemText + '</li>';
+                        inList = true;
+                    } else {
+                        lines[i] = '<li>' + itemText + '</li>';
+                    }
+                } else {
+                    if (inList) {
+                        lines[i-1] += "</ul>";
+                        inList = false;
+                    }
+                }
+            }
+            if (inList) {
+                lines[lines.length - 1] += "</ul>";
+            }
+            
+            return lines.join("\n");
+        }
+
         async function selectSession(sessionId, element) {
             document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
@@ -919,7 +964,7 @@
             document.getElementById('placeholderScreen').style.display = 'none';
             document.getElementById('workspaceContent').style.display = 'flex';
             document.getElementById('activeSessionId').innerText = sessionId;
-            document.getElementById('explanationText').innerText = "Querying Gemini for explanation...";
+            document.getElementById('explanationText').innerHTML = "Querying Gemini for explanation...";
 
             activeSessionId = sessionId;
             cacheExplanationCustomer = "";
@@ -938,7 +983,7 @@
                 const data = await response.json();
                 cacheExplanationCustomer = data.explanation;
                 if (activeExplanationMode === "customer") {
-                    document.getElementById('explanationText').innerText = cacheExplanationCustomer;
+                    document.getElementById('explanationText').innerHTML = formatMarkdownToHTML(cacheExplanationCustomer);
                 }
             } catch (err) {
                 console.error(err);
@@ -950,7 +995,7 @@
                 const data = await response.json();
                 cacheExplanationRegulator = data.explanation;
                 if (activeExplanationMode === "regulator") {
-                    document.getElementById('explanationText').innerText = cacheExplanationRegulator;
+                    document.getElementById('explanationText').innerHTML = formatMarkdownToHTML(cacheExplanationRegulator);
                 }
             } catch (err) {
                 console.error(err);
@@ -968,7 +1013,7 @@
                 btnReg.style.background = "rgba(255, 255, 255, 0.03)";
                 btnReg.style.borderColor = "var(--border-color)";
                 if (updateUI) {
-                    document.getElementById('explanationText').innerText = cacheExplanationCustomer || "Fetching customer summary...";
+                    document.getElementById('explanationText').innerHTML = formatMarkdownToHTML(cacheExplanationCustomer || "Fetching customer summary...");
                 }
             } else {
                 btnReg.style.background = "rgba(139, 92, 246, 0.2)";
@@ -976,7 +1021,7 @@
                 btnCust.style.background = "rgba(255, 255, 255, 0.03)";
                 btnCust.style.borderColor = "var(--border-color)";
                 if (updateUI) {
-                    document.getElementById('explanationText').innerText = cacheExplanationRegulator || "Generating formal regulatory compliance defense letter...";
+                    document.getElementById('explanationText').innerHTML = formatMarkdownToHTML(cacheExplanationRegulator || "Generating formal regulatory compliance defense letter...");
                 }
             }
         }

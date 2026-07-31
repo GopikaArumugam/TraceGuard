@@ -7,6 +7,8 @@ from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
 from litellm import completion
 from app.config import settings
+from app.db import SessionLocal
+from app.models import ApplicantProfile
 
 # 1. Define the Agent State
 class AgentState(TypedDict):
@@ -19,6 +21,7 @@ class AgentState(TypedDict):
     final_decision: str
 
 # 2. Define Tools using the LangChain @tool decorator
+# These tools strictly query the database. If the record is missing, they throw an exception.
 @tool
 def get_credit_profile(user_id: str, email: str) -> Dict[str, Any]:
     """Fetch credit bureau report. Contains credit score and report details.
@@ -26,33 +29,17 @@ def get_credit_profile(user_id: str, email: str) -> Dict[str, Any]:
     db = SessionLocal()
     try:
         profile = db.query(ApplicantProfile).filter(ApplicantProfile.user_id == user_id).first()
-        if profile:
-            return {
-                "full_name": "Alice Smith",
-                "email_address": email,
-                "credit_score": profile.credit_score,
-                "report_date": "2026-07-30"
-            }
+        if not profile:
+            raise ValueError(f"Underwriting Error: Applicant profile for '{user_id}' not found in the credit database.")
+        
+        return {
+            "full_name": "Alice Smith",
+            "email_address": email,
+            "credit_score": profile.credit_score,
+            "report_date": "2026-07-30"
+        }
     finally:
         db.close()
-
-    # Fallback to test profile registry if not found in database
-    profiles = {
-        "usr_low": 500,
-        "usr_unemployed": 680,
-        "usr_new_job": 690,
-        "usr_missed_payments": 710,
-        "usr_high_debt": 620,
-        "usr_qualified": 740,
-    }
-    score = profiles.get(user_id, 650)
-    
-    return {
-        "full_name": "Alice Smith",
-        "email_address": email,
-        "credit_score": score,
-        "report_date": "2026-07-30"
-    }
 
 @tool
 def get_active_debts(user_id: str) -> Dict[str, Any]:
@@ -61,31 +48,16 @@ def get_active_debts(user_id: str) -> Dict[str, Any]:
     db = SessionLocal()
     try:
         profile = db.query(ApplicantProfile).filter(ApplicantProfile.user_id == user_id).first()
-        if profile:
-            return {
-                "active_credit_lines": 3,
-                "debts_total": profile.debts_total,
-                "missed_payments_last_12m": profile.missed_payments_last_12m
-            }
+        if not profile:
+            raise ValueError(f"Underwriting Error: Debt record for user '{user_id}' not found in the banking ledger database.")
+        
+        return {
+            "active_credit_lines": 3,
+            "debts_total": profile.debts_total,
+            "missed_payments_last_12m": profile.missed_payments_last_12m
+        }
     finally:
         db.close()
-
-    # Fallback to test profile registry if not found in database
-    debts = {
-        "usr_low": {"debts_total": 8000.0, "missed_payments_last_12m": 0},
-        "usr_unemployed": {"debts_total": 1000.0, "missed_payments_last_12m": 0},
-        "usr_new_job": {"debts_total": 1500.0, "missed_payments_last_12m": 0},
-        "usr_missed_payments": {"debts_total": 2000.0, "missed_payments_last_12m": 2},
-        "usr_high_debt": {"debts_total": 6500.0, "missed_payments_last_12m": 0},
-        "usr_qualified": {"debts_total": 1200.0, "missed_payments_last_12m": 0},
-    }
-    profile = debts.get(user_id, {"debts_total": 2000.0, "missed_payments_last_12m": 0})
-    
-    return {
-        "active_credit_lines": 3,
-        "debts_total": profile["debts_total"],
-        "missed_payments_last_12m": profile["missed_payments_last_12m"]
-    }
 
 @tool
 def get_income_profile(user_id: str) -> Dict[str, Any]:
@@ -94,33 +66,17 @@ def get_income_profile(user_id: str) -> Dict[str, Any]:
     db = SessionLocal()
     try:
         profile = db.query(ApplicantProfile).filter(ApplicantProfile.user_id == user_id).first()
-        if profile:
-            return {
-                "employer_name": "Acme Global Corp",
-                "employment_status": profile.employment_status,
-                "monthly_gross_income": profile.monthly_gross_income,
-                "length_of_employment_years": profile.length_of_employment_years
-            }
+        if not profile:
+            raise ValueError(f"Underwriting Error: Employment record for user '{user_id}' not found in the verified income database.")
+        
+        return {
+            "employer_name": "Acme Global Corp",
+            "employment_status": profile.employment_status,
+            "monthly_gross_income": profile.monthly_gross_income,
+            "length_of_employment_years": profile.length_of_employment_years
+        }
     finally:
         db.close()
-
-    # Fallback to test profile registry if not found in database
-    incomes = {
-        "usr_low": {"income": 1500.0, "status": "Employed", "length": 4.5},
-        "usr_unemployed": {"income": 0.0, "status": "Unemployed", "length": 0.0},
-        "usr_new_job": {"income": 4500.0, "status": "Employed", "length": 0.4},
-        "usr_missed_payments": {"income": 5000.0, "status": "Employed", "length": 2.5},
-        "usr_high_debt": {"income": 3000.0, "status": "Employed", "length": 3.0},
-        "usr_qualified": {"income": 9500.0, "status": "Employed", "length": 3.5},
-    }
-    profile = incomes.get(user_id, {"income": 3000.0, "status": "Employed", "length": 2.0})
-    
-    return {
-        "employer_name": "Acme Global Corp",
-        "employment_status": profile["status"],
-        "monthly_gross_income": profile["income"],
-        "length_of_employment_years": profile["length"]
-    }
 
 # Tool schemas definition for LiteLLM tool calling
 TOOLS_SCHEMAS = [
@@ -169,25 +125,20 @@ TOOLS_SCHEMAS = [
     }
 ]
 
-from app.db import SessionLocal
-from app.models import ApplicantProfile
-
 # 3. Define Graph Nodes
 
 def agent_brain_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any]:
-    """Node 1: The central LLM brain. Extracts policy thresholds dynamically 
-    from the configurable graph parameters.
+    """Node 1: The central LLM brain.
     """
     messages = state["messages"].copy()
     
-    # Read dynamic policy overrides from config (defaults if not provided)
+    # Read dynamic policy overrides from config
     configurable = config.get("configurable", {})
     min_score = configurable.get("credit_score_threshold", 580)
     max_dti = configurable.get("max_dti_ratio", 0.45)
     min_job_years = configurable.get("min_employment_years", 1.0)
     target_model = configurable.get("llm_model", "gemini/gemini-3.5-flash")
     
-    # Inject configurable values dynamically into the system instructions!
     system_msg = messages[0].copy()
     system_msg["content"] = (
         f"You are a professional bank loan underwriter agent.\n"
@@ -216,10 +167,8 @@ def agent_brain_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any
         f"   Decision: <APPROVED or DENIED>\n"
     )
     
-    # Update the messages history to use the dynamically configured system instructions
     messages[0] = system_msg
     
-    # Establish priority list starting with the requested model
     model_pool = [{"model": target_model, "api_key": None}]
     
     if settings.GEMINI_API_KEY:
@@ -229,7 +178,6 @@ def agent_brain_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any
     if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "mock-key":
         model_pool.append({"model": "openai/gpt-4o-mini", "api_key": settings.OPENAI_API_KEY})
         
-    # Map the correct key for the selected model
     for item in model_pool:
         if "gemini" in item["model"]:
             item["api_key"] = settings.GEMINI_API_KEY
