@@ -11,7 +11,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791.svg?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Architecture Overview](#-architecture) • [Key Features](#-key-features) • [Business Agents](#-enterprise-agents-suite) • [Quick Start](#-quick-start) • [AWS Deployment](#-aws-production-deployment) • [API Reference](#-api-documentation)
+[Architecture Overview](#-architecture) • [Key Features](#-key-features) • [Business Agents](#-enterprise-agents-suite) • [Quick Start](#-quick-start) • [AWS Deployment](#-aws-production-deployment) • [API Reference](#-api-documentation) • [Troubleshooting & FAQs](#-troubleshooting--faqs)
 
 </div>
 
@@ -169,6 +169,60 @@ Run the automated Pytest test suite covering PII redaction and agent execution:
 ```bash
 python -m pytest
 ```
+
+---
+
+## 🔒 Security & Data Protection Compliance
+
+TraceGuard enforces multi-layer enterprise security mechanisms to ensure audit trails satisfy global regulatory frameworks:
+
+- **GDPR Article 5 & 25 (Data Minimization & Privacy by Design)**: PII data is sanitized before database storage via regex pattern replacement.
+- **EU AI Act Article 13 & 14 (Transparency & Human Oversight)**: Reconstructs end-to-end decision causal chains and enables human intervention flags for borderline evaluations.
+- **Tamper-Evident Storage**: Audit records are persisted with strictly immutable timestamps and relational child step linkage (`session_id`).
+- **Secret Isolation**: Secrets and API keys are isolated via environment files (`.env`) and excluded from repository index tracking (`.gitignore`).
+
+---
+
+## ❓ Troubleshooting & FAQs
+
+<details>
+<summary><b>1. Error: <code>psycopg2.errors.InsufficientPrivilege: permission denied for schema public</code></b></summary>
+<br>
+In PostgreSQL 15+, non-owner users cannot create tables in the <code>public</code> schema by default. Grant schema ownership to your database user:
+```bash
+sudo -u postgres psql -d audit_db -c "ALTER SCHEMA public OWNER TO db_admin;"
+```
+</details>
+
+<details>
+<summary><b>2. Error: <code>[Errno 98] Address already in use</code> when running on Port 80</b></summary>
+<br>
+An existing Uvicorn or Nginx process is already bound to Port 80. Terminate the active process before restarting:
+```bash
+sudo fuser -k 80/tcp
+```
+</details>
+
+<details>
+<summary><b>3. Session ID shows <code>UNDEFINED</code> in UI Console</b></summary>
+<br>
+This indicates the backend API returned a <code>500 Internal Server Error</code>, typically caused by missing or invalid <code>GEMINI_API_KEY</code> credentials in your <code>.env</code> file. Check Uvicorn terminal logs for detailed stack traces.
+</details>
+
+<details>
+<summary><b>4. LiteLLM <code>RateLimitError: 429 Too Many Requests</code></b></summary>
+<br>
+Your Google AI Studio free tier quota for the selected Gemini model has been temporarily exhausted. Enable billing on your Google Cloud Project or switch the target model string in <code>.env</code> (e.g. <code>GEMINI_MODEL=gemini/gemini-2.0-flash</code>).
+</details>
+
+---
+
+## 🔮 Roadmap & Future Scope
+
+- [ ] **PS-7.2 Cryptographic Log Hashing**: Add SHA-256 hash chains for stored `decision_steps` to detect log tampering.
+- [ ] **PS-5.1 Agent Web Application Firewall (WAF)**: Intercept tool calls to enforce real-time parameter validation and rate limiting.
+- [ ] **Data Subject Access Request (DSAR) Handler**: Automated export and erasure pipelines for customer audit records.
+- [ ] **Multi-Provider Failover**: Automatic routing to OpenAI/Anthropic fallback models upon Gemini rate limit detection.
 
 ---
 
