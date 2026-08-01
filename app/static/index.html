@@ -1394,7 +1394,7 @@
 
         // Initialize on mount
         (function() {
-            const saved = localStorage.getItem('theme') || 'dark';
+            const saved = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', saved);
             const btn = document.getElementById('themeToggleBtn');
             if (btn) btn.innerHTML = saved === 'light' ? 'Dark Mode' : 'Light Mode';
