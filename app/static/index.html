@@ -1,121 +1,435 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loan Approver Agent Control Center</title>
-    <!-- Modern Typography -->
+    <title>TraceGuard — Decision Path Auditor Platform</title>
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-color: #0b0f19;
-            --card-bg: rgba(17, 25, 40, 0.75);
+            --bg-main: #030712;
+            --bg-card: rgba(15, 23, 42, 0.75);
+            --bg-card-hover: rgba(30, 41, 59, 0.8);
             --border-color: rgba(255, 255, 255, 0.08);
-            --text-primary: #f3f4f6;
-            --text-secondary: #9ca3af;
-            --primary-accent: #8b5cf6;
-            --primary-glow: rgba(139, 92, 246, 0.15);
+            --border-highlight: rgba(99, 102, 241, 0.3);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --accent-glow: rgba(99, 102, 241, 0.2);
             --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
             --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.15);
             --warning: #f59e0b;
+            --input-bg: rgba(15, 23, 42, 0.9);
+            --code-bg: #090d16;
+            --code-text: #e2e8f0;
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+        }
+
+        :root[data-theme="light"] {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f1f5f9;
+            --border-color: #e2e8f0;
+            --border-highlight: rgba(79, 70, 229, 0.4);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #4f46e5;
+            --accent-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            --accent-glow: rgba(79, 70, 229, 0.1);
+            --success: #059669;
+            --success-glow: rgba(5, 150, 105, 0.1);
+            --danger: #dc2626;
+            --danger-glow: rgba(220, 38, 38, 0.1);
+            --warning: #d97706;
+            --input-bg: #ffffff;
+            --code-bg: #f1f5f9;
+            --code-text: #0f172a;
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            height: 100vh;
-            display: grid;
-            grid-template-rows: auto 1fr;
-            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
             background-image: 
-                radial-gradient(circle at 5% 10%, rgba(99, 102, 241, 0.05) 0%, transparent 35%),
-                radial-gradient(circle at 95% 90%, rgba(139, 92, 246, 0.06) 0%, transparent 40%);
+                radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.04) 0%, transparent 40%);
         }
 
+        /* ------------------------------------------------------------- */
+        /* NAVBAR                                                        */
+        /* ------------------------------------------------------------- */
         header {
             padding: 16px 40px;
             border-bottom: 1px solid var(--border-color);
-            background: rgba(11, 15, 25, 0.8);
-            backdrop-filter: blur(12px);
-            z-index: 100;
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .logo-container {
+        .brand-container {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .logo-icon {
-            width: 30px;
-            height: 30px;
-            background: linear-gradient(135deg, #a78bfa, var(--primary-accent));
-            border-radius: 8px;
-            box-shadow: 0 0 16px var(--primary-glow);
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            background: var(--accent-gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 16px var(--accent-glow);
+            color: white;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
         }
 
-        h1 {
+        .brand-title {
             font-family: 'Outfit', sans-serif;
             font-size: 20px;
-            font-weight: 600;
+            font-weight: 700;
             letter-spacing: -0.5px;
-            background: linear-gradient(to right, #ffffff, #c084fc);
+            color: var(--text-main);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .theme-toggle-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-toggle-btn:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--success-glow);
+            border: 1px solid var(--success);
+            color: var(--success);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        /* ------------------------------------------------------------- */
+        /* HERO SECTION                                                  */
+        /* ------------------------------------------------------------- */
+        .hero-banner {
+            padding: 40px;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(180deg, var(--accent-glow) 0%, transparent 100%);
+        }
+
+        .hero-inner {
+            max-width: 1550px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .hero-text {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 850px;
+        }
+
+        .hero-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent-glow);
+            border: 1px solid var(--border-highlight);
+            padding: 6px 14px;
+            border-radius: 20px;
+            width: fit-content;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hero-headline {
+            font-family: 'Outfit', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .hero-subtext {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .hero-stats-card {
+            display: flex;
+            gap: 28px;
+            background: var(--bg-card);
+            padding: 18px 28px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-val {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            background: var(--accent-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .container {
+        .stat-lbl {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .stat-divider {
+            width: 1px;
+            background: var(--border-color);
+        }
+
+        /* ------------------------------------------------------------- */
+        /* PIPELINE PROCESS DIAGRAM                                      */
+        /* ------------------------------------------------------------- */
+        .pipeline-section {
+            padding: 24px 40px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.01);
+        }
+
+        .pipeline-inner {
             max-width: 1550px;
-            width: 100%;
             margin: 0 auto;
-            padding: 20px 40px;
-            display: grid;
-            grid-template-columns: 460px 1fr;
-            gap: 24px;
-            height: 100%;
-            min-height: 0;
-            overflow: hidden;
         }
 
-        /* Glassmorphic Panel Base */
-        .panel {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 24px;
-            backdrop-filter: blur(16px);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            height: 100%;
-            max-height: 100%;
-            min-width: 0;
-            overflow-y: auto;
-        }
-
-        .search-title {
-            font-size: 13px;
+        .pipeline-header {
+            font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: var(--text-secondary);
+            color: var(--accent);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        /* Forms inputs */
+        .pipeline-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .pipeline-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+        }
+
+        .pipeline-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 24px -4px var(--accent-glow);
+        }
+
+        .step-num {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: 0.5px;
+        }
+
+        .step-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .step-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* ------------------------------------------------------------- */
+        /* MAIN WORKSPACE LAYOUT                                         */
+        /* ------------------------------------------------------------- */
+        .main-container {
+            max-width: 1550px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 32px 40px;
+            display: grid;
+            grid-template-columns: 480px 1fr;
+            gap: 28px;
+            min-height: 700px;
+        }
+
+        .panel-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Left control panel stays sticky while right workspace scrolls */
+        .main-container > .panel-card:first-child {
+            position: sticky;
+            top: 80px;
+            align-self: start;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .main-container > .panel-card:first-child::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .main-container > .panel-card:first-child::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .main-container > .panel-card:first-child::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 10px;
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ------------------------------------------------------------- */
+        /* AGENT SELECTION TABS                                          */
+        /* ------------------------------------------------------------- */
+        .agent-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: var(--input-bg);
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .agent-tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px 8px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-align: center;
+        }
+
+        .agent-tab-btn.active {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        /* ------------------------------------------------------------- */
+        /* FORMS & INPUTS                                                */
+        /* ------------------------------------------------------------- */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
         .form-group {
             display: flex;
             flex-direction: column;
@@ -125,814 +439,742 @@
         .form-label {
             font-size: 11px;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .search-input {
+        .form-input {
             width: 100%;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.02);
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: #fff;
-            font-family: inherit;
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text-main);
             font-size: 13px;
-            transition: all 0.2s ease;
-        }
-
-        .search-input:focus {
+            font-family: inherit;
             outline: none;
-            border-color: var(--primary-accent);
-            box-shadow: 0 0 10px var(--primary-glow);
-            background: rgba(255, 255, 255, 0.04);
         }
 
-        .btn {
-            background: var(--primary-accent);
+        .form-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        select.form-input option {
+            background: var(--bg-card);
+            color: var(--text-main);
+        }
+
+        .action-btn {
+            background: var(--accent-gradient);
             color: white;
             border: none;
-            border-radius: 8px;
-            padding: 12px 16px;
-            font-family: inherit;
-            font-weight: 600;
-            font-size: 13px;
+            border-radius: 12px;
+            padding: 14px 20px;
+            font-size: 14px;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+            box-shadow: 0 4px 16px var(--accent-glow);
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             gap: 8px;
         }
 
-        .btn:hover {
+        .action-btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.3);
-            background: #9b72f8;
+            box-shadow: 0 6px 20px var(--accent-glow);
         }
 
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            box-shadow: none;
-            padding: 10px 16px;
+        .action-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-
+        /* ------------------------------------------------------------- */
+        /* AUDIT REGISTRY & WORKSPACE                                    */
+        /* ------------------------------------------------------------- */
         .session-list {
             list-style: none;
-            overflow-y: auto;
-            max-height: 220px;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            padding-right: 2px;
+            max-height: 260px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .session-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .session-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .session-list::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 10px;
+        }
+
+        .session-list::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
         }
 
         .session-item {
-            padding: 12px 14px;
-            border-radius: 8px;
-            border: 1px solid transparent;
-            background: rgba(255, 255, 255, 0.015);
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px 16px;
             cursor: pointer;
-            transition: all 0.2s ease;
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .session-item:hover {
-            background: rgba(255, 255, 255, 0.03);
-            border-color: rgba(255, 255, 255, 0.06);
+        .session-item:hover, .session-item.active {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
         }
 
         .session-item.active {
-            background: rgba(139, 92, 246, 0.08);
-            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 2px var(--accent);
         }
 
-        .session-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .session-user {
-            font-weight: 600;
-            font-size: 13px;
-        }
-
-        .badge {
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 12px;
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
         }
 
-        .badge.approved {
-            background: rgba(16, 185, 129, 0.15);
+        .badge-status.approved {
+            background: var(--success-glow);
             color: var(--success);
+            border: 1px solid var(--success);
         }
 
-        .badge.denied {
-            background: rgba(239, 68, 68, 0.15);
+        .badge-status.denied, .badge-status.failed {
+            background: var(--danger-glow);
             color: var(--danger);
+            border: 1px solid var(--danger);
         }
 
-        .session-amount {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .session-date {
-            font-size: 10px;
-            color: var(--text-secondary);
-            align-self: flex-end;
-        }
-
-        /* Right Content Panel */
-        .workspace-section {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .workspace-placeholder {
-            margin: auto;
-            text-align: center;
-            color: var(--text-secondary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-            padding: 150px 0;
-        }
-
-        .placeholder-icon {
-            font-size: 48px;
-            opacity: 0.3;
-        }
-
-        /* Detail Cards */
-        .details-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .status-header-card {
+        /* ------------------------------------------------------------- */
+        /* WORKSPACE CONTENT                                             */
+        /* ------------------------------------------------------------- */
+        .workspace-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(255, 255, 255, 0.02);
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .explanation-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .exp-tab-btn {
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px 24px;
-        }
-
-        .status-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .status-banner {
-            font-size: 14px;
-            padding: 6px 16px;
-            font-weight: 700;
-            border-radius: 20px;
-            text-transform: uppercase;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .status-banner.approved {
-            background: var(--success);
-            color: white;
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
-        }
-
-        .status-banner.denied {
-            background: var(--danger);
-            color: white;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
-        }
-
-        .explanation-card {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(139, 92, 246, 0.01));
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 12px;
-            padding: 24px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .explanation-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--primary-accent);
-        }
-
-        .card-title {
+            color: var(--text-muted);
+            padding: 8px 14px;
+            border-radius: 8px;
             font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--primary-accent);
-            margin-bottom: 10px;
+            font-weight: 600;
+            cursor: pointer;
         }
 
-        .explanation-text {
-            font-size: 14px;
-            line-height: 1.6;
-            color: #f3f4f6;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        .exp-tab-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-glow);
         }
 
-        /* Timeline Tree Styling */
-        .timeline-card {
-            background: rgba(255, 255, 255, 0.01);
+        .explanation-box {
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 24px;
-            min-width: 0;
+            padding: 16px 20px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-main);
+            max-height: 160px;
+            overflow-y: auto;
         }
 
+        /* ------------------------------------------------------------- */
+        /* TIMELINE TRACE TREE                                           */
+        /* ------------------------------------------------------------- */
         .timeline-tree {
-            position: relative;
-            padding-left: 28px;
-            margin-top: 12px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            min-width: 0;
-        }
-
-        .timeline-tree::before {
-            content: '';
-            position: absolute;
-            left: 9px;
-            top: 4px;
-            bottom: 4px;
-            width: 2px;
-            background: rgba(255, 255, 255, 0.05);
+            gap: 16px;
+            margin-top: 12px;
         }
 
         .timeline-node {
+            display: flex;
+            gap: 14px;
             position: relative;
-            min-width: 0;
         }
 
-        .timeline-icon {
+        .timeline-node::before {
+            content: '';
             position: absolute;
-            left: -28px;
-            top: 2px;
-            width: 20px;
-            height: 20px;
+            left: 17px;
+            top: 36px;
+            bottom: -16px;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .timeline-node:last-child::before {
+            display: none;
+        }
+
+        .node-avatar {
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            background: #1f2937;
-            border: 2px solid var(--border-color);
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
-            z-index: 2;
-            transition: all 0.3s ease;
+            font-size: 16px;
+            z-index: 10;
         }
 
-        .timeline-node.active .timeline-icon {
-            border-color: var(--primary-accent);
-            box-shadow: 0 0 8px var(--primary-glow);
-            background: var(--primary-accent);
-            color: white;
-        }
-
-        .step-icon-svg {
-            width: 10px;
-            height: 10px;
-            color: var(--text-secondary);
-        }
-
-        .timeline-node.active .timeline-icon .step-icon-svg {
-            color: white;
-        }
-
-        .timeline-content {
-            background: rgba(255, 255, 255, 0.012);
+        .node-card {
+            flex: 1;
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px 16px;
-            transition: all 0.2s ease;
-            min-width: 0;
+            border-radius: 12px;
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .timeline-content:hover {
-            background: rgba(255, 255, 255, 0.02);
-            border-color: rgba(255, 255, 255, 0.08);
-        }
-
-        .node-header {
+        .node-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 6px;
         }
 
-        .node-title {
+        .node-name {
             font-size: 13px;
-            font-weight: 600;
-        }
-
-        .node-type {
-            font-size: 9px;
             font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 2px 6px;
-            border-radius: 4px;
+            color: var(--text-main);
         }
 
-        .node-body {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
-            color: #a7f3d0;
-            background: rgba(0, 0, 0, 0.18);
-            padding: 8px 10px;
+        .node-tag {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 3px 8px;
             border-radius: 6px;
-            margin-top: 4px;
-            overflow-x: auto;
+            background: var(--accent-glow);
+            color: var(--accent);
+        }
+
+        .node-code {
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
             white-space: pre-wrap;
-            word-wrap: break-word;
             word-break: break-all;
         }
 
-        .node-time {
-            font-size: 10px;
-            color: var(--text-secondary);
-            text-align: right;
-            margin-top: 4px;
+        /* ------------------------------------------------------------- */
+        /* FOOTER                                                        */
+        /* ------------------------------------------------------------- */
+        footer {
+            margin-top: 40px;
+            padding: 32px 40px;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
         }
 
-        /* Loading spinner */
-        .spinner {
-            border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 50%;
-            border-top: 2px solid #fff;
-            width: 14px;
-            height: 14px;
-            animation: spin 0.8s linear infinite;
+        .footer-inner {
+            max-width: 1550px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        .footer-link {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 13px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .footer-link:hover {
+            text-decoration: underline;
         }
 
         @media (max-width: 1024px) {
-            .container {
+            .main-container {
                 grid-template-columns: 1fr;
-                padding: 16px;
-                gap: 16px;
+                padding: 20px;
             }
-            header {
-                padding: 16px 20px;
+            header, .hero-banner, .pipeline-section {
+                padding: 20px;
             }
         }
     </style>
 </head>
 <body>
 
+    <!-- NAVBAR -->
     <header>
-        <div class="logo-container">
-            <div class="logo-icon"></div>
-            <h1>Decision Path Auditor Console</h1>
+        <div class="brand-container">
+            <div class="brand-logo">T</div>
+            <span class="brand-title">TraceGuard</span>
         </div>
-        <span class="badge approved" style="padding: 6px 14px; letter-spacing: 0.5px;">Universal Governance</span>
+        
+        <div class="nav-actions">
+            <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeToggleBtn">
+                <span>Light Mode</span>
+            </button>
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                <span>Production v2.0 Active</span>
+            </div>
+        </div>
     </header>
 
-    <div class="container">
-        
-        <!-- Left Panel: Form & Search -->
-        <div class="panel">
-            <!-- 1. System Authorization -->
-            <div class="search-section">
-                <h2 class="search-title">System Authorization</h2>
-                <div class="form-group">
-                    <input type="password" id="apiKeyInput" class="search-input" value="super-secret-audit-key-99" placeholder="Enter X-API-Key">
+    <!-- HERO BANNER -->
+    <section class="hero-banner">
+        <div class="hero-inner">
+            <div class="hero-text">
+                <div class="hero-tag">
+                    <span>Passive Callback & Security Proxy</span>
+                </div>
+                <h1 class="hero-headline">Every tool call. Inspected, redacted & explained.</h1>
+                <p class="hero-subtext">
+                    Standard console logs leak sensitive PII and lack causal decision logic. TraceGuard sits between stateful agent decisions and tool execution to enforce real-time auditing, SHA-256 data sanitization, and automated regulatory defense letters.
+                </p>
+            </div>
+
+            <div class="hero-stats-card">
+                <div class="stat-box">
+                    <span class="stat-val">3</span>
+                    <span class="stat-lbl">Autonomous Agents</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-box">
+                    <span class="stat-val">100%</span>
+                    <span class="stat-lbl">PII Redacted</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-box">
+                    <span class="stat-val">99.9%</span>
+                    <span class="stat-lbl">Audit Traceability</span>
                 </div>
             </div>
-            
-            <div style="border-top: 1px solid var(--border-color); margin: 2px 0;"></div>
+        </div>
+    </section>
 
-            <!-- 2. Run Agent Selection & Form -->
-            <div class="search-section">
-                <h2 class="search-title">Governance Evaluation Registry</h2>
+    <!-- PIPELINE DIAGRAM -->
+    <section class="pipeline-section">
+        <div class="pipeline-inner">
+            <div class="pipeline-header">
+                <span>Audit Inspection Pipeline Workflow</span>
+                <div style="height: 1px; flex: 1; background: var(--border-color);"></div>
+            </div>
+
+            <!-- Connected Horizontal Timeline Flow -->
+            <div style="display: flex; align-items: stretch; gap: 12px; overflow-x: auto; padding: 10px 0;">
                 
-                <!-- Agent Selector (Loan / HR / Refund) -->
-                <div class="form-group" style="margin-bottom: 8px;">
-                    <label class="form-label" style="color: #a78bfa; font-weight: 700;">Select Target Agent to Audit</label>
-                    <select id="agentTypeSelect" class="search-input" onchange="toggleAgentUI(this.value)" style="background: #1e1b4b; border-color: #8b5cf6; color: #f3f4f6; font-weight: 600;">
-                        <option value="loan">Lending Underwriter Agent (Active Live)</option>
-                        <option value="hr">HR Leave Approval Agent (Simulated)</option>
-                        <option value="refund">Customer Support Refund Agent (Simulated)</option>
+                <!-- Stage 01 -->
+                <div style="flex: 1; min-width: 220px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="width: 28px; height: 28px; border-radius: 50%; background: var(--accent-glow); color: var(--accent); font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent);">01</span>
+                        <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">TRIGGER</span>
+                    </div>
+                    <span style="font-size: 14px; font-weight: 700; color: var(--text-main);">Stateful Agent Request</span>
+                    <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">LLM receives target goal, parameters, and domain tool definitions.</span>
+                </div>
+
+                <!-- Connector Arrow -->
+                <div style="display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 16px; font-weight: 800;">→</div>
+
+                <!-- Stage 02 -->
+                <div style="flex: 1; min-width: 220px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="width: 28px; height: 28px; border-radius: 50%; background: var(--accent-glow); color: var(--accent); font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent);">02</span>
+                        <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">LISTENER</span>
+                    </div>
+                    <span style="font-size: 14px; font-weight: 700; color: var(--text-main);">Callback Interceptor</span>
+                    <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Passive handler captures tool arguments, thoughts & raw outputs.</span>
+                </div>
+
+                <!-- Connector Arrow -->
+                <div style="display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 16px; font-weight: 800;">→</div>
+
+                <!-- Stage 03 (PII Redaction Highlight) -->
+                <div style="flex: 1; min-width: 220px; background: var(--bg-card); border: 1px solid var(--success); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; position: relative; box-shadow: 0 0 16px var(--success-glow);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="width: 28px; height: 28px; border-radius: 50%; background: var(--success-glow); color: var(--success); font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--success);">03</span>
+                        <span style="font-size: 10px; font-weight: 700; color: var(--success); text-transform: uppercase;">SECURITY</span>
+                    </div>
+                    <span style="font-size: 14px; font-weight: 700; color: var(--text-main);">PII Sanitizer</span>
+                    <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Regex and salted SHA-256 hashes sanitize names, emails & phone numbers.</span>
+                </div>
+
+                <!-- Connector Arrow -->
+                <div style="display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 16px; font-weight: 800;">→</div>
+
+                <!-- Stage 04 -->
+                <div style="flex: 1; min-width: 220px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="width: 28px; height: 28px; border-radius: 50%; background: var(--accent-glow); color: var(--accent); font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent);">04</span>
+                        <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">STORAGE</span>
+                    </div>
+                    <span style="font-size: 14px; font-weight: 700; color: var(--text-main);">Audit Registry</span>
+                    <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Immutable audit steps persisted to database linked by session_id.</span>
+                </div>
+
+                <!-- Connector Arrow -->
+                <div style="display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 16px; font-weight: 800;">→</div>
+
+                <!-- Stage 05 -->
+                <div style="flex: 1; min-width: 220px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="width: 28px; height: 28px; border-radius: 50%; background: var(--accent-glow); color: var(--accent); font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent);">05</span>
+                        <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">AI EXPLAIN</span>
+                    </div>
+                    <span style="font-size: 14px; font-weight: 700; color: var(--text-main);">Compliance Summarizer</span>
+                    <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">Synthesizes customer explanations & FTC defense briefs.</span>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="main-container">
+        
+        <!-- LEFT PANEL: CONTROLS & FORM -->
+        <div class="panel-card">
+            <!-- AUTHORIZATION -->
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <span class="panel-title">System Authorization</span>
+                <input type="password" id="apiKeyInput" class="form-input" value="super-secret-audit-key-99" placeholder="Enter X-API-Key">
+            </div>
+
+            <div style="height: 1px; background: var(--border-color);"></div>
+
+            <!-- AGENT SELECTION TABS -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <span class="panel-title">Select Target Agent to Audit</span>
+                <div class="agent-tabs">
+                    <button class="agent-tab-btn active" id="tab-loan" onclick="selectAgentTab('loan')">
+                        <span style="font-weight: 700; font-size: 11px;">LOAN</span>
+                        <span>Lending</span>
+                    </button>
+                    <button class="agent-tab-btn" id="tab-hr" onclick="selectAgentTab('hr')">
+                        <span style="font-weight: 700; font-size: 11px;">HR</span>
+                        <span>Leave</span>
+                    </button>
+                    <button class="agent-tab-btn" id="tab-refund" onclick="selectAgentTab('refund')">
+                        <span style="font-weight: 700; font-size: 11px;">SUPPORT</span>
+                        <span>Refund</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- LOAN AGENT FORM -->
+            <div id="loanInputsContainer" style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="form-group">
+                    <label class="form-label">Scenario Presets</label>
+                    <select id="scenarioPresets" class="form-input" onchange="applyPreset(this.value)">
+                        <option value="usr_qualified">Approved: Fully Qualified Presets</option>
+                        <option value="usr_low">Denied: Credit Score Failure (&lt; 580)</option>
+                        <option value="usr_unemployed">Denied: Unemployed Status</option>
                     </select>
                 </div>
 
-                <!-- 2.A LOAN AGENT FORM CONTAINER -->
-                <div id="loanInputsContainer" style="display: flex; flex-direction: column; gap: 12px;">
-                    <!-- Preset Templates Selection -->
+                <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Scenario Presets</label>
-                        <select id="scenarioPresets" class="search-input" onchange="applyPreset(this.value)" style="background: #111827; color: #c084fc; font-weight: 600;">
-                            <option value="usr_qualified">Approved: Fully Qualified Presets</option>
-                            <option value="usr_low">Denied: Credit Score Failure (< 580)</option>
-                            <option value="usr_unemployed">Denied: Unemployed Status</option>
-                            <option value="usr_new_job">Denied: Short Job Length (< 1 Year)</option>
-                            <option value="usr_missed_payments">Denied: Missed Payment History</option>
-                            <option value="usr_high_debt">Denied: Excessive DTI Debt Ratio</option>
-                            <option value="custom">-- Custom User Config (Manual Edit) --</option>
+                        <label class="form-label">User ID (Target)</label>
+                        <input type="text" id="evalUserId" class="form-input" value="usr_qualified">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Requested Loan ($)</label>
+                        <input type="number" id="evalAmount" class="form-input" value="10000">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Credit Score</label>
+                        <input type="number" id="evalCreditScore" class="form-input" value="740" min="300" max="850">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Monthly Gross ($)</label>
+                        <input type="number" id="evalIncome" class="form-input" value="9500">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Outstanding Debts ($)</label>
+                        <input type="number" id="evalDebts" class="form-input" value="1200">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Missed Payments</label>
+                        <input type="number" id="evalMissedPayments" class="form-input" value="0" min="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Job Length (Years)</label>
+                        <input type="number" id="evalJobLength" class="form-input" value="3.5" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Employment Status</label>
+                        <select id="evalStatus" class="form-input">
+                            <option value="Employed">Employed</option>
+                            <option value="Unemployed">Unemployed</option>
                         </select>
                     </div>
-
-                    <!-- Form Inputs -->
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">User ID (Auditor Target)</label>
-                            <input type="text" id="evalUserId" class="search-input" value="usr_qualified">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Requested Loan ($)</label>
-                            <input type="number" id="evalAmount" class="search-input" value="10000">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Credit Score</label>
-                            <input type="number" id="evalCreditScore" class="search-input" value="740" min="300" max="850">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Monthly Gross Income ($)</label>
-                            <input type="number" id="evalIncome" class="search-input" value="9500">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Outstanding Debts ($)</label>
-                            <input type="number" id="evalDebts" class="search-input" value="1200">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Missed Payments (Last 12m)</label>
-                            <input type="number" id="evalMissedPayments" class="search-input" value="0" min="0">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Job Length (Years)</label>
-                            <input type="number" id="evalJobLength" class="search-input" value="3.5" step="0.1">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Employment Status</label>
-                            <select id="evalStatus" class="search-input" style="background: #111827; color: white;">
-                                <option value="Employed">Employed</option>
-                                <option value="Unemployed">Unemployed</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row" style="display: none;">
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input type="text" id="evalEmail" class="search-input" value="customer.alice@gmail.com">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Phone</label>
-                            <input type="text" id="evalPhone" class="search-input" value="+1-555-0199">
-                        </div>
-                    </div>
-
-                    <!-- 2.5 Configurable Underwriting Policy -->
-                    <div style="border-top: 1px dashed var(--border-color); margin: 6px 0;"></div>
-                    <h2 class="search-title" style="color: #c084fc; font-size: 11px; letter-spacing: 0.5px;">Agent Underwriting Policy (Runtime Config)</h2>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Min Credit Score</label>
-                            <input type="number" id="policyMinScore" class="search-input" value="580">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Max DTI Ratio (%)</label>
-                            <input type="number" id="policyMaxDti" class="search-input" value="45">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Min Job Length (Years)</label>
-                            <input type="number" id="policyMinJob" class="search-input" value="1.0" step="0.1">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Target LLM Brain</label>
-                            <select id="policyLLM" class="search-input" style="background: #111827; color: white;">
-                                <option value="gemini/gemini-3.5-flash">Gemini 3.5 Flash</option>
-                                <option value="groq/llama-3.1-8b-instant">Groq: Llama 3.1 8B</option>
-                                <option value="openai/gpt-4o-mini">OpenAI: GPT-4o Mini</option>
-                            </select>
-                        </div>
-                    </div>
                 </div>
-
-                <!-- 2.B HR LEAVE AGENT FORM CONTAINER -->
-                <div id="hrInputsContainer" style="display: none; flex-direction: column; gap: 12px; margin-top: 10px;">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Employee ID</label>
-                            <input type="text" id="hrEmployeeId" class="search-input" value="EMP-1001">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Leave Type</label>
-                            <select id="hrLeaveType" class="search-input" style="background: #111827; color: white;">
-                                <option value="Annual">Annual Leave</option>
-                                <option value="Sick">Sick Leave</option>
-                                <option value="Parental">Parental Leave</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Days Requested</label>
-                        <input type="number" id="hrLeaveDays" class="search-input" value="5" min="1">
-                    </div>
-                </div>
-
-                <!-- 2.C SUPPORT REFUND AGENT FORM CONTAINER -->
-                <div id="refundInputsContainer" style="display: none; flex-direction: column; gap: 12px; margin-top: 10px;">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Customer ID</label>
-                            <input type="text" id="refundCustomerId" class="search-input" value="CUST-5001">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Order ID</label>
-                            <input type="text" id="refundOrderId" class="search-input" value="ORD-9001">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Refund Value ($)</label>
-                        <input type="number" id="refundAmount" class="search-input" value="149.99" step="0.01">
-                    </div>
-                </div>
-
-                <button class="btn" id="evalBtn" onclick="runEvaluation()" style="margin-top: 6px;">
-                    <span>Run AI Evaluation</span>
-                </button>
             </div>
 
-            <div style="border-top: 1px solid var(--border-color); margin: 2px 0;"></div>
-            
-            <!-- 3. Audit Search & Recent list -->
-            <div class="search-section" style="flex-grow: 1;">
-                <h2 class="search-title">Audit Registry</h2>
-                <div class="search-box">
-                    <input type="text" id="userInput" class="search-input" placeholder="Filter by User ID">
-                    <button class="btn btn-secondary" onclick="fetchSessions()">Search</button>
+            <!-- HR AGENT FORM -->
+            <div id="hrInputsContainer" style="display: none; flex-direction: column; gap: 12px;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Employee ID</label>
+                        <input type="text" id="hrEmployeeId" class="form-input" value="EMP-1001">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Leave Type</label>
+                        <select id="hrLeaveType" class="form-input">
+                            <option value="Annual">Annual Leave</option>
+                            <option value="Sick">Sick Leave</option>
+                            <option value="Parental">Parental Leave</option>
+                        </select>
+                    </div>
                 </div>
-                <ul class="session-list" id="sessionList" style="margin-top: 10px;">
-                    <!-- Dynamic sessions load here -->
+                <div class="form-group">
+                    <label class="form-label">Days Requested</label>
+                    <input type="number" id="hrLeaveDays" class="form-input" value="5" min="1">
+                </div>
+            </div>
+
+            <!-- REFUND AGENT FORM -->
+            <div id="refundInputsContainer" style="display: none; flex-direction: column; gap: 12px;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Customer ID</label>
+                        <input type="text" id="refundCustomerId" class="form-input" value="CUST-5001">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Order ID</label>
+                        <input type="text" id="refundOrderId" class="form-input" value="ORD-9001">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Refund Value ($)</label>
+                    <input type="number" id="refundAmount" class="form-input" value="149.99" step="0.01">
+                </div>
+            </div>
+
+            <button class="action-btn" id="evalBtn" onclick="runEvaluation()">
+                <span>Run AI Evaluation</span>
+            </button>
+
+            <div style="height: 1px; background: var(--border-color);"></div>
+
+            <!-- AUDIT REGISTRY SEARCH -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <span class="panel-title">Audit Registry Sessions</span>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="searchUserId" class="form-input" placeholder="Filter by User ID">
+                    <button class="action-btn" onclick="fetchSessions()" style="padding: 8px 16px; font-size: 12px;">Search</button>
+                </div>
+                <ul class="session-list" id="sessionList">
+                    <!-- Loaded dynamically -->
                 </ul>
             </div>
         </div>
-        
-        <!-- Right Panel: Visual Timeline and Summarizer -->
-        <div class="panel" style="flex-grow: 1;">
-            <div class="workspace-section" id="workspaceContent" style="display: none;">
-                
-                <div class="status-header-card">
-                    <div style="min-width: 0; flex-grow: 1; margin-right: 12px;">
-                        <h2 font-family="'Outfit', sans-serif" style="font-size: 18px; font-weight: 600; margin-bottom: 2px;">
-                            Session ID
-                        </h2>
-                        <span id="activeSessionId" style="color: var(--text-secondary); font-size: 13px; word-break: break-all;"></span>
-                    </div>
-                    <div id="statusBanner" class="status-banner">APPROVED</div>
-                </div>
-                
-                <div class="details-grid">
-                    <!-- LLM Explanation Card -->
-                    <div class="explanation-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
-                            <div class="card-title" style="margin-bottom: 0;">Explainability Intelligence</div>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="btn btn-secondary" id="btnExplainCustomer" onclick="showExplanationMode('customer')" style="font-size: 11px; padding: 4px 10px; background: rgba(139, 92, 246, 0.2); border-color: var(--primary-accent);">Customer Summary</button>
-                                <button class="btn btn-secondary" id="btnExplainRegulator" onclick="showExplanationMode('regulator')" style="font-size: 11px; padding: 4px 10px;">Regulator Draft (Bonus)</button>
-                            </div>
-                        </div>
-                        <div class="explanation-text" id="explanationText">
-                            Select a session to load AI explanation...
-                        </div>
-                    </div>
-                    
-                    <!-- Timeline Card -->
-                    <div class="timeline-card">
-                        <div class="card-title">Chronological Step Trace</div>
-                        <div class="timeline-tree" id="timelineTree">
-                            <!-- Dynamic timeline steps loaded here -->
-                        </div>
-                    </div>
-                </div>
 
+        <!-- RIGHT PANEL: DECISION WORKSPACE -->
+        <div class="panel-card" style="flex: 1;">
+            <div id="placeholderScreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 16px; color: var(--text-muted); text-align: center;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--accent-glow); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--accent);">LOG</div>
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: var(--text-main);">Agent Decision Workspace</h3>
+                <p style="font-size: 13px; max-width: 400px; line-height: 1.5;">Run an evaluation above or select a session from the Audit Registry list to inspect its secure timeline.</p>
             </div>
 
-            <!-- Placeholder Screen -->
-            <div class="workspace-placeholder" id="placeholderScreen">
-                <svg style="width: 56px; height: 56px; color: rgba(139, 92, 246, 0.4); margin-bottom: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <h3>Agent Decision Path Workspace</h3>
-                <p>Run a new AI evaluation above, or select a session from the Audit Registry to view its secure, redacted timeline.</p>
+            <div id="workspaceContent" style="display: none; flex-direction: column; gap: 24px; height: 100%;">
+                <!-- SESSION HEADER -->
+                <div class="workspace-header">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Audit Session ID</span>
+                        <span id="activeSessionId" style="font-family: 'Fira Code', monospace; font-size: 14px; font-weight: 700; color: var(--accent);">--</span>
+                    </div>
+                    <div id="sessionStatusBadge" class="badge-status approved">Approved</div>
+                </div>
+
+                <!-- EXPLAINABILITY INTELLIGENCE -->
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="panel-title">Explainability Intelligence</span>
+                        <div class="explanation-tabs">
+                            <button class="exp-tab-btn active" id="btnExplainCustomer" onclick="showExplanationMode('customer')">Customer Summary</button>
+                            <button class="exp-tab-btn" id="btnExplainRegulator" onclick="showExplanationMode('regulator')">Regulator Draft (Bonus)</button>
+                        </div>
+                    </div>
+                    <div class="explanation-box" id="explanationText">Select a session to load explanations...</div>
+                </div>
+
+                <!-- STEP TRACE TIMELINE TREE -->
+                <div style="display: flex; flex-direction: column; gap: 12px; flex: 1;">
+                    <span class="panel-title">Chronological Step Trace</span>
+                    <div class="timeline-tree" id="timelineTree">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
             </div>
         </div>
+    </main>
 
-    </div>
+    <!-- EXECUTIVE FOOTER -->
+    <footer>
+        <div class="footer-inner">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="brand-logo" style="width: 24px; height: 24px; font-size: 12px;">T</div>
+                    <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; color: var(--text-main);">TraceGuard Governance Platform</span>
+                </div>
+                <span style="font-size: 12px; color: var(--text-muted);">Developed by <strong>Gopika Arumugam</strong> • Enterprise AI Observability & Decision Support Engine</span>
+            </div>
 
+            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                <a href="https://github.com/GopikaArumugam/TraceGuard.git" target="_blank" class="footer-link">GitHub Repository</a>
+                <a href="https://trace-guard-eta.vercel.app/" target="_blank" class="footer-link">Vercel Production</a>
+                <a href="http://13.49.68.207" target="_blank" class="footer-link">AWS EC2 Server</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // Preset values matching core mock data
-        const presets = {
-            usr_qualified: {
-                userId: "usr_qualified",
-                amount: 10000,
-                creditScore: 740,
-                income: 9500,
-                debts: 1200,
-                missed: 0,
-                length: 3.5,
-                status: "Employed"
-            },
-            usr_low: {
-                userId: "usr_low",
-                amount: 10000,
-                creditScore: 500,
-                income: 1500,
-                debts: 8000,
-                missed: 0,
-                length: 4.5,
-                status: "Employed"
-            },
-            usr_unemployed: {
-                userId: "usr_unemployed",
-                amount: 10000,
-                creditScore: 680,
-                income: 0,
-                debts: 1000,
-                missed: 0,
-                length: 0.0,
-                status: "Unemployed"
-            },
-            usr_new_job: {
-                userId: "usr_new_job",
-                amount: 10000,
-                creditScore: 690,
-                income: 4500,
-                debts: 1500,
-                missed: 0,
-                length: 0.4,
-                status: "Employed"
-            },
-            usr_missed_payments: {
-                userId: "usr_missed_payments",
-                amount: 10000,
-                creditScore: 710,
-                income: 5000,
-                debts: 2000,
-                missed: 2,
-                length: 2.5,
-                status: "Employed"
-            },
-            usr_high_debt: {
-                userId: "usr_high_debt",
-                amount: 10000,
-                creditScore: 620,
-                income: 3000,
-                debts: 6500,
-                missed: 0,
-                length: 3.0,
-                status: "Employed"
-            }
-        };
-
+        let currentAgentType = "loan";
         let activeSessionId = null;
+        let activeExplanationMode = "customer";
         let cacheExplanationCustomer = "";
         let cacheExplanationRegulator = "";
-        let activeExplanationMode = "customer";
 
-        function applyPreset(val) {
-            if (val === "custom") return;
-            const data = presets[val];
+        const presets = {
+            "usr_qualified": { userId: "usr_qualified", amount: 10000, creditScore: 740, income: 9500, debts: 1200, missedPayments: 0, jobLength: 3.5, status: "Employed" },
+            "usr_low": { userId: "usr_low", amount: 15000, creditScore: 520, income: 4000, debts: 3000, missedPayments: 2, jobLength: 0.8, status: "Employed" },
+            "usr_unemployed": { userId: "usr_unemployed", amount: 10000, creditScore: 680, income: 0, debts: 500, missedPayments: 0, jobLength: 0, status: "Unemployed" }
+        };
+
+        function selectAgentTab(type) {
+            currentAgentType = type;
+            document.querySelectorAll('.agent-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${type}`).classList.add('active');
+
+            document.getElementById('loanInputsContainer').style.display = type === 'loan' ? 'flex' : 'none';
+            document.getElementById('hrInputsContainer').style.display = type === 'hr' ? 'flex' : 'none';
+            document.getElementById('refundInputsContainer').style.display = type === 'refund' ? 'flex' : 'none';
+        }
+
+        function applyPreset(key) {
+            const data = presets[key];
             if (!data) return;
-
             document.getElementById('evalUserId').value = data.userId;
             document.getElementById('evalAmount').value = data.amount;
             document.getElementById('evalCreditScore').value = data.creditScore;
             document.getElementById('evalIncome').value = data.income;
             document.getElementById('evalDebts').value = data.debts;
-            document.getElementById('evalMissedPayments').value = data.missed;
-            document.getElementById('evalJobLength').value = data.length;
+            document.getElementById('evalMissedPayments').value = data.missedPayments;
+            document.getElementById('evalJobLength').value = data.jobLength;
             document.getElementById('evalStatus').value = data.status;
-
-            // Reset policy parameters to defaults
-            document.getElementById('policyMinScore').value = 580;
-            document.getElementById('policyMaxDti').value = 45;
-            document.getElementById('policyMinJob').value = 1.0;
-            document.getElementById('policyLLM').selectedIndex = 0;
-        }
-
-        function toggleAgentUI(agentType) {
-            const loanFields = document.getElementById('loanInputsContainer');
-            const hrFields = document.getElementById('hrInputsContainer');
-            const refundFields = document.getElementById('refundInputsContainer');
-            
-            if (agentType === 'loan') {
-                loanFields.style.display = 'flex';
-                hrFields.style.display = 'none';
-                refundFields.style.display = 'none';
-            } else if (agentType === 'hr') {
-                loanFields.style.display = 'none';
-                hrFields.style.display = 'flex';
-                refundFields.style.display = 'none';
-            } else {
-                loanFields.style.display = 'none';
-                hrFields.style.display = 'none';
-                refundFields.style.display = 'flex';
-            }
         }
 
         function getHeaders() {
-            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            const apiKey = document.getElementById('apiKeyInput').value;
             return {
-                "Content-Type": "application/json",
-                "X-API-Key": apiKey
+                'Content-Type': 'application/json',
+                'X-API-Key': apiKey
             };
         }
 
         async function runEvaluation() {
             const btn = document.getElementById('evalBtn');
-            const originalText = btn.innerHTML;
-            
             btn.disabled = true;
-            btn.innerHTML = `<div class="spinner"></div> <span>Processing Agent Loop...</span>`;
+            btn.innerHTML = `<span>Running AI Evaluation...</span>`;
 
-            const agentType = document.getElementById('agentTypeSelect').value;
-            let payload = {
-                agent_type: agentType,
-                email: "audit.simulation@apx.com",
-                phone: "+1-555-0100"
-            };
+            // Reset workspace to loading state for new run
+            activeSessionId = null;
+            cacheExplanationCustomer = "";
+            cacheExplanationRegulator = "";
+            document.getElementById('placeholderScreen').style.display = 'none';
+            document.getElementById('workspaceContent').style.display = 'flex';
+            document.getElementById('activeSessionId').innerText = "Processing New Evaluation...";
+            document.getElementById('sessionStatusBadge').innerText = "RUNNING";
+            document.getElementById('sessionStatusBadge').className = "badge-status";
+            document.getElementById('explanationText').innerHTML = "<em>Agent is executing tool calls, sanitizing PII, and generating compliance summary...</em>";
+            document.getElementById('timelineTree').innerHTML = `<div style="font-size: 12px; color: var(--text-muted); padding: 12px;">Capturing chronological tool execution trace...</div>`;
 
-            if (agentType === 'loan') {
-                payload.user_id = document.getElementById('evalUserId').value.trim();
-                payload.email = document.getElementById('evalEmail').value.trim();
-                payload.phone = document.getElementById('evalPhone').value.trim();
+            let payload = { agent_type: currentAgentType };
+
+            if (currentAgentType === 'loan') {
+                payload.user_id = document.getElementById('evalUserId').value;
+                payload.email = "customer.alice@gmail.com";
+                payload.phone = "+1-555-0199";
                 payload.requested_amount = parseFloat(document.getElementById('evalAmount').value);
                 payload.credit_score = parseInt(document.getElementById('evalCreditScore').value);
-                payload.debts_total = parseFloat(document.getElementById('evalDebts').value);
-                payload.missed_payments_last_12m = parseInt(document.getElementById('evalMissedPayments').value);
-                payload.monthly_gross_income = parseFloat(document.getElementById('evalIncome').value);
+                payload.monthly_income = parseFloat(document.getElementById('evalIncome').value);
+                payload.outstanding_debts = parseFloat(document.getElementById('evalDebts').value);
+                payload.missed_payments = parseInt(document.getElementById('evalMissedPayments').value);
                 payload.employment_status = document.getElementById('evalStatus').value;
-                payload.length_of_employment_years = parseFloat(document.getElementById('evalJobLength').value);
-                payload.credit_score_threshold = parseInt(document.getElementById('policyMinScore').value);
-                payload.max_dti_ratio = parseFloat(document.getElementById('policyMaxDti').value) / 100;
-                payload.min_employment_years = parseFloat(document.getElementById('policyMinJob').value);
-                payload.llm_model = document.getElementById('policyLLM').value;
-            } else if (agentType === 'hr') {
-                payload.user_id = document.getElementById('hrEmployeeId').value.trim();
-                payload.hr_employee_id = document.getElementById('hrEmployeeId').value.trim();
+                payload.job_length_years = parseFloat(document.getElementById('evalJobLength').value);
+                payload.llm_model = "gemini/gemini-1.5-flash";
+            } else if (currentAgentType === 'hr') {
+                payload.hr_employee_id = document.getElementById('hrEmployeeId').value;
                 payload.hr_leave_type = document.getElementById('hrLeaveType').value;
                 payload.hr_leave_days = parseInt(document.getElementById('hrLeaveDays').value);
+                payload.user_id = payload.hr_employee_id;
+                payload.email = "employee@company.com";
+                payload.phone = "+1-555-0199";
                 payload.requested_amount = parseFloat(payload.hr_leave_days);
-                payload.llm_model = document.getElementById('policyLLM').value;
-            } else {
-                payload.user_id = document.getElementById('refundCustomerId').value.trim();
-                payload.refund_customer_id = document.getElementById('refundCustomerId').value.trim();
-                payload.refund_order_id = document.getElementById('refundOrderId').value.trim();
+                payload.llm_model = "gemini/gemini-1.5-flash";
+            } else if (currentAgentType === 'refund') {
+                payload.refund_customer_id = document.getElementById('refundCustomerId').value;
+                payload.refund_order_id = document.getElementById('refundOrderId').value;
                 payload.refund_amount = parseFloat(document.getElementById('refundAmount').value);
+                payload.user_id = payload.refund_customer_id;
+                payload.email = "customer@retail.com";
+                payload.phone = "+1-555-0199";
                 payload.requested_amount = payload.refund_amount;
-                payload.llm_model = document.getElementById('policyLLM').value;
+                payload.llm_model = "gemini/gemini-1.5-flash";
             }
 
             try {
@@ -942,147 +1184,90 @@
                     body: JSON.stringify(payload)
                 });
                 
-                if (response.status === 401) {
-                    alert("Unauthorized: Invalid API Key provided in System Authorization!");
-                    return;
-                }
-                
                 const data = await response.json();
-                await fetchSessions();
-                
                 if (data && data.session_id) {
-                    const matchItem = document.querySelector(`.session-item[data-session-id="${data.session_id}"]`) || document.querySelectorAll('.session-item')[0];
-                    if (matchItem) {
-                        selectSession(data.session_id, matchItem);
-                    }
+                    await fetchSessions(false);
+                    selectSession(data.session_id);
                 }
             } catch (err) {
-                console.error("Error running evaluation:", err);
-                alert("Agent execution failed! Check your terminal console for errors.");
+                console.error("Evaluation error:", err);
+                alert("Agent execution failed! Check console.");
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = originalText;
+                btn.innerHTML = `<span>Run AI Evaluation</span>`;
             }
         }
 
-        async function fetchSessions() {
-            const userId = document.getElementById('userInput').value.trim();
+        async function fetchSessions(autoSelectFirst = false) {
+            const userId = document.getElementById('searchUserId').value;
             let url = '/audit/sessions';
-            if (userId) {
-                url += `?user_id=${encodeURIComponent(userId)}`;
-            }
+            if (userId) url += `?user_id=${encodeURIComponent(userId)}`;
 
             try {
                 const response = await fetch(url, { headers: getHeaders() });
-                if (response.status === 401) {
-                    alert("Unauthorized: Search query blocked.");
-                    return;
-                }
                 const data = await response.json();
-                renderSessions(data);
+                renderSessions(data, autoSelectFirst);
             } catch (err) {
-                console.error("Error fetching sessions:", err);
+                console.error("Fetch sessions error:", err);
             }
         }
 
-        function renderSessions(sessions) {
+        function renderSessions(sessions, autoSelectFirst = false) {
             const list = document.getElementById('sessionList');
             list.innerHTML = '';
-            
-            if (sessions.length === 0) {
-                list.innerHTML = `<li style="color: var(--text-secondary); text-align: center; margin-top: 20px; font-size: 12px;">No records found.</li>`;
+
+            if (!sessions || sessions.length === 0) {
+                list.innerHTML = `<li style="color: var(--text-muted); text-align: center; padding: 12px; font-size: 12px;">No audit sessions recorded yet.</li>`;
+                if (!activeSessionId) {
+                    document.getElementById('placeholderScreen').style.display = 'flex';
+                    document.getElementById('workspaceContent').style.display = 'none';
+                }
                 return;
             }
 
             sessions.forEach(session => {
                 const li = document.createElement('li');
                 li.className = 'session-item';
+                if (activeSessionId === session.session_id) li.classList.add('active');
                 li.setAttribute('data-session-id', session.session_id);
                 li.onclick = () => selectSession(session.session_id, li);
-                
-                const date = new Date(session.created_at).toLocaleString();
-                const statusBadge = session.decision_status.toLowerCase() === 'approved' 
-                    ? `<span class="badge approved">Approved</span>`
-                    : `<span class="badge denied">Denied</span>`;
+
+                const date = new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const isApp = session.decision_status.toLowerCase() === 'approved';
+                const statusClass = isApp ? 'approved' : 'denied';
 
                 li.innerHTML = `
-                    <div class="session-header">
-                        <span class="session-user">${session.user_id}</span>
-                        ${statusBadge}
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <span style="font-weight: 700; font-size: 13px;">${session.user_id}</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">${date}</span>
                     </div>
-                    <div class="session-amount">Requested: $${session.requested_amount.toLocaleString()}</div>
-                    <div class="session-date">${date}</div>
+                    <span class="badge-status ${statusClass}">${session.decision_status}</span>
                 `;
                 list.appendChild(li);
             });
 
-            if (!activeSessionId && sessions.length > 0) {
+            if (autoSelectFirst && sessions.length > 0 && !activeSessionId) {
                 selectSession(sessions[0].session_id, list.children[0]);
             }
-        }
-
-        function formatMarkdownToHTML(text) {
-            if (!text) return "";
-            let html = text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
-                
-            // Convert bold **text** to <strong>text</strong>
-            html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-            
-            // Convert bullet points "* item" or "- item" to list items
-            let lines = html.split("\n");
-            let inList = false;
-            for (let i = 0; i < lines.length; i++) {
-                let line = lines[i].trim();
-                if (line.startsWith("* ")) {
-                    let itemText = line.substring(2);
-                    if (!inList) {
-                        lines[i] = '<ul style="margin-left: 20px; margin-bottom: 8px; list-style-type: disc;"><li>' + itemText + '</li>';
-                        inList = true;
-                    } else {
-                        lines[i] = '<li>' + itemText + '</li>';
-                    }
-                } else if (line.startsWith("- ")) {
-                    let itemText = line.substring(2);
-                    if (!inList) {
-                        lines[i] = '<ul style="margin-left: 20px; margin-bottom: 8px; list-style-type: square;"><li>' + itemText + '</li>';
-                        inList = true;
-                    } else {
-                        lines[i] = '<li>' + itemText + '</li>';
-                    }
-                } else {
-                    if (inList) {
-                        lines[i-1] += "</ul>";
-                        inList = false;
-                    }
-                }
-            }
-            if (inList) {
-                lines[lines.length - 1] += "</ul>";
-            }
-            
-            return lines.join("\n");
         }
 
         async function selectSession(sessionId, element) {
             if (!sessionId || sessionId === 'undefined') return;
 
             document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
-            if (element) {
-                element.classList.add('active');
-            }
+            const targetElem = element || document.querySelector(`.session-item[data-session-id="${sessionId}"]`);
+            if (targetElem) targetElem.classList.add('active');
 
             document.getElementById('placeholderScreen').style.display = 'none';
             document.getElementById('workspaceContent').style.display = 'flex';
             document.getElementById('activeSessionId').innerText = sessionId;
-            document.getElementById('explanationText').innerHTML = "Querying Gemini for explanation...";
+            document.getElementById('explanationText').innerHTML = "<em>Generating explanation with Gemini/Groq...</em>";
+            document.getElementById('timelineTree').innerHTML = `<div style="font-size: 12px; color: var(--text-muted); padding: 12px;">Loading chronological step trace...</div>`;
 
             activeSessionId = sessionId;
             cacheExplanationCustomer = "";
             cacheExplanationRegulator = "";
-            
+
             showExplanationMode('customer', false);
 
             fetchTimeline(sessionId);
@@ -1090,126 +1275,132 @@
         }
 
         async function loadExplanations(sessionId) {
-            // Fetch customer explanation
             try {
-                const response = await fetch(`/audit/session/${sessionId}/explain`, { headers: getHeaders() });
-                const data = await response.json();
-                cacheExplanationCustomer = data.explanation;
-                if (activeExplanationMode === "customer") {
+                const res1 = await fetch(`/audit/session/${sessionId}/explain`, { headers: getHeaders() });
+                const data1 = await res1.json();
+                cacheExplanationCustomer = data1.explanation;
+                if (activeExplanationMode === 'customer') {
                     document.getElementById('explanationText').innerHTML = formatMarkdownToHTML(cacheExplanationCustomer);
                 }
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (e) { console.error(e); }
 
-            // Fetch regulator draft
             try {
-                const response = await fetch(`/audit/session/${sessionId}/challenge-response`, { headers: getHeaders() });
-                const data = await response.json();
-                cacheExplanationRegulator = data.explanation;
-                if (activeExplanationMode === "regulator") {
+                const res2 = await fetch(`/audit/session/${sessionId}/challenge-response`, { headers: getHeaders() });
+                const data2 = await res2.json();
+                cacheExplanationRegulator = data2.explanation;
+                if (activeExplanationMode === 'regulator') {
                     document.getElementById('explanationText').innerHTML = formatMarkdownToHTML(cacheExplanationRegulator);
                 }
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (e) { console.error(e); }
         }
 
         function showExplanationMode(mode, updateUI = true) {
             activeExplanationMode = mode;
-            const btnCust = document.getElementById('btnExplainCustomer');
-            const btnReg = document.getElementById('btnExplainRegulator');
+            document.getElementById('btnExplainCustomer').classList.toggle('active', mode === 'customer');
+            document.getElementById('btnExplainRegulator').classList.toggle('active', mode === 'regulator');
 
-            if (mode === 'customer') {
-                btnCust.style.background = "rgba(139, 92, 246, 0.2)";
-                btnCust.style.borderColor = "var(--primary-accent)";
-                btnReg.style.background = "rgba(255, 255, 255, 0.03)";
-                btnReg.style.borderColor = "var(--border-color)";
-                if (updateUI) {
-                    document.getElementById('explanationText').innerHTML = formatMarkdownToHTML(cacheExplanationCustomer || "Fetching customer summary...");
-                }
-            } else {
-                btnReg.style.background = "rgba(139, 92, 246, 0.2)";
-                btnReg.style.borderColor = "var(--primary-accent)";
-                btnCust.style.background = "rgba(255, 255, 255, 0.03)";
-                btnCust.style.borderColor = "var(--border-color)";
-                if (updateUI) {
-                    document.getElementById('explanationText').innerHTML = formatMarkdownToHTML(cacheExplanationRegulator || "Generating formal regulatory compliance defense letter...");
-                }
+            if (updateUI) {
+                const text = mode === 'customer' ? cacheExplanationCustomer : cacheExplanationRegulator;
+                document.getElementById('explanationText').innerHTML = formatMarkdownToHTML(text || "Loading explanation...");
             }
         }
 
         async function fetchTimeline(sessionId) {
             try {
-                const response = await fetch(`/audit/session/${sessionId}`, { headers: getHeaders() });
-                const data = await response.json();
-                
-                const banner = document.getElementById('statusBanner');
-                banner.innerText = data.decision_status;
-                if (data.decision_status.toLowerCase() === 'approved') {
-                    banner.className = 'status-banner approved';
-                } else {
-                    banner.className = 'status-banner denied';
+                const res = await fetch(`/audit/session/${sessionId}`, { headers: getHeaders() });
+                if (!res.ok) {
+                    document.getElementById('timelineTree').innerHTML = `<div style="color: var(--danger); font-size: 12px; padding: 12px;">Timeline API error (${res.status}). Check server logs.</div>`;
+                    return;
                 }
-
-                renderTimeline(data.timeline);
-            } catch (err) {
-                console.error("Error fetching timeline:", err);
+                const data = await res.json();
+                const stepList = data.timeline || data.steps || [];
+                const statusStr = data.decision_status || (data.session ? data.session.decision_status : "APPROVED");
+                renderTimeline(stepList, statusStr);
+            } catch (e) {
+                console.error("Fetch timeline error:", e);
+                document.getElementById('timelineTree').innerHTML = `<div style="color: var(--danger); font-size: 12px; padding: 12px;">Failed to render timeline: ${e.message}</div>`;
             }
         }
 
-        function renderTimeline(steps) {
+        function renderTimeline(steps, status) {
+            const badge = document.getElementById('sessionStatusBadge');
+            badge.innerText = status;
+            badge.className = `badge-status ${status.toLowerCase() === 'approved' ? 'approved' : 'denied'}`;
+
             const tree = document.getElementById('timelineTree');
             tree.innerHTML = '';
 
+            if (!steps || steps.length === 0) {
+                tree.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); padding: 16px; background: var(--input-bg); border-radius: 10px; border: 1px solid var(--border-color);">No chronological steps recorded for this session.</div>`;
+                return;
+            }
+
             steps.forEach((step, idx) => {
                 const node = document.createElement('div');
-                node.className = 'timeline-node active';
+                node.className = 'timeline-node';
 
-                let icon = `<svg class="step-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
-                if (step.step_type === 'TOOL_CALL') {
-                    icon = `<svg class="step-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
-                }
-                if (step.step_type === 'TOOL_OUTPUT') {
-                    icon = `<svg class="step-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>`;
-                }
-                if (step.step_type === 'THOUGHT') {
-                    icon = `<svg class="step-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`;
-                }
-                if (step.step_type === 'FINAL_DECISION') {
-                    icon = `<svg class="step-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 11 2 2 4-4"/></svg>`;
-                }
+                let icon = 'LOG';
+                let tagColor = 'var(--accent)';
+                if (step.step_type === 'TOOL_CALL') { icon = 'CALL'; tagColor = '#3b82f6'; }
+                if (step.step_type === 'TOOL_OUTPUT') { icon = 'DATA'; tagColor = '#10b981'; }
+                if (step.step_type === 'THOUGHT') { icon = 'AI'; tagColor = '#8b5cf6'; }
+                if (step.step_type === 'FINAL_DECISION') { icon = 'FINAL'; tagColor = status.toLowerCase() === 'approved' ? '#10b981' : '#ef4444'; }
 
-                const time = new Date(step.created_at).toLocaleTimeString();
-                
-                let payloadText = '';
-                if (step.step_type === 'TOOL_CALL') {
-                    payloadText = JSON.stringify(step.input_payload, null, 2);
-                } else if (step.step_type === 'TOOL_OUTPUT') {
-                    payloadText = JSON.stringify(step.output_payload, null, 2);
-                } else if (step.step_type === 'THOUGHT') {
-                    payloadText = step.input_payload.logic_reasoning || JSON.stringify(step.input_payload);
-                } else if (step.step_type === 'FINAL_DECISION') {
-                    payloadText = `Outcome: ${step.output_payload.status}`;
-                }
+                let payload = "";
+                if (step.step_type === 'TOOL_CALL') payload = JSON.stringify(step.input_payload, null, 2);
+                else if (step.step_type === 'TOOL_OUTPUT') payload = JSON.stringify(step.output_payload, null, 2);
+                else if (step.step_type === 'THOUGHT') payload = step.input_payload.logic_reasoning || JSON.stringify(step.input_payload);
+                else if (step.step_type === 'FINAL_DECISION') payload = `Final Verdict: ${step.output_payload.status}`;
+
+                let timeStr = new Date(step.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
                 node.innerHTML = `
-                    <div class="timeline-icon">${icon}</div>
-                    <div class="timeline-content">
-                        <div class="node-header">
-                            <span class="node-title">${step.name}</span>
-                            <span class="node-type">${step.step_type}</span>
+                    <div class="node-avatar" style="font-size: 9px; font-weight: 800; color: ${tagColor}; border-color: ${tagColor};">${icon}</div>
+                    <div class="node-card">
+                        <div class="node-top">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 11px; font-weight: 800; color: var(--text-muted);">#${idx + 1}</span>
+                                <span class="node-name">${step.name}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 10px; color: var(--text-muted);">${timeStr}</span>
+                                <span class="node-tag" style="background: rgba(139, 92, 246, 0.1); color: ${tagColor}; border: 1px solid ${tagColor};">${step.step_type}</span>
+                            </div>
                         </div>
-                        <pre class="node-body">${payloadText}</pre>
-                        <div class="node-time">${time}</div>
+                        <pre class="node-code">${payload}</pre>
                     </div>
                 `;
                 tree.appendChild(node);
             });
         }
 
-        // Initialize presets on mount
-        applyPreset("usr_qualified");
+        function formatMarkdownToHTML(text) {
+            if (!text) return "";
+            return text
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                .replace(/\n/g, "<br>");
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const newTheme = current === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            const btn = document.getElementById('themeToggleBtn');
+            if (btn) btn.innerHTML = newTheme === 'light' ? 'Dark Mode' : 'Light Mode';
+        }
+
+        // Initialize on mount
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+            const btn = document.getElementById('themeToggleBtn');
+            if (btn) btn.innerHTML = saved === 'light' ? 'Dark Mode' : 'Light Mode';
+            applyPreset("usr_qualified");
+            fetchSessions(false);
+        })();
     </script>
 </body>
 </html>
