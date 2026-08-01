@@ -169,14 +169,19 @@ def agent_brain_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any
     
     messages[0] = system_msg
     
-    model_pool = [{"model": target_model, "api_key": None}]
-    
-    if settings.GEMINI_API_KEY:
-        model_pool.append({"model": "gemini/gemini-3.5-flash", "api_key": settings.GEMINI_API_KEY})
+    env_model = os.getenv("GEMINI_MODEL", "gemini/gemini-1.5-flash")
+    candidate_models = []
+    if env_model:
+        candidate_models.append(env_model)
+    if target_model and target_model not in candidate_models:
+        candidate_models.append(target_model)
+    for fallback in ["gemini/gemini-1.5-flash", "gemini/gemini-2.0-flash", "gemini/gemini-3.5-flash"]:
+        if fallback not in candidate_models:
+            candidate_models.append(fallback)
     if settings.GROQ_API_KEY:
-        model_pool.append({"model": "groq/llama-3.1-8b-instant", "api_key": settings.GROQ_API_KEY})
-    if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "mock-key":
-        model_pool.append({"model": "openai/gpt-4o-mini", "api_key": settings.OPENAI_API_KEY})
+        candidate_models.append("groq/llama-3.1-8b-instant")
+
+    model_pool = [{"model": m, "api_key": None} for m in candidate_models]
         
     for item in model_pool:
         if "gemini" in item["model"]:
@@ -196,7 +201,7 @@ def agent_brain_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any
             continue
             
         max_retries = 2
-        for attempt in range(max_retries):
+        for attempt in range(2):
             try:
                 response = completion(
                     model=model_name,
@@ -209,13 +214,9 @@ def agent_brain_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any
                 break
             except Exception as e:
                 last_err = e
-                if "503" in str(e) or "overloaded" in str(e).lower():
-                    wait_time = 2 ** attempt
-                    print(f"Warning: {model_name} is busy. Retrying in {wait_time}s...")
-                    time.sleep(wait_time)
-                else:
+                print(f"[Loan Agent] Model {model_name} failed: {e}. Falling back...")
+                if attempt == 1:
                     break
-        
         if response_msg:
             break
     else:

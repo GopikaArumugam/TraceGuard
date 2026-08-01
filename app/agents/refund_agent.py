@@ -193,11 +193,19 @@ def refund_brain_node(state: RefundAgentState, config: RunnableConfig) -> Dict[s
     messages[0] = system_msg
 
     # Build model pool
-    model_pool = [{"model": target_model}]
-    if settings.GEMINI_API_KEY:
-        model_pool.append({"model": "gemini/gemini-3.5-flash"})
+    env_model = os.getenv("GEMINI_MODEL", "gemini/gemini-1.5-flash")
+    candidate_models = []
+    if env_model:
+        candidate_models.append(env_model)
+    if target_model and target_model not in candidate_models:
+        candidate_models.append(target_model)
+    for fallback in ["gemini/gemini-1.5-flash", "gemini/gemini-2.0-flash", "gemini/gemini-3.5-flash"]:
+        if fallback not in candidate_models:
+            candidate_models.append(fallback)
     if settings.GROQ_API_KEY:
-        model_pool.append({"model": "groq/llama-3.1-8b-instant"})
+        candidate_models.append("groq/llama-3.1-8b-instant")
+
+    model_pool = [{"model": m} for m in candidate_models]
 
     response_msg = None
     last_err = None
@@ -213,6 +221,9 @@ def refund_brain_node(state: RefundAgentState, config: RunnableConfig) -> Dict[s
         if not api_key:
             continue
 
+        if "gemini" in model_name and api_key:
+            os.environ["GEMINI_API_KEY"] = api_key
+
         for attempt in range(2):
             try:
                 response = completion(
@@ -226,9 +237,8 @@ def refund_brain_node(state: RefundAgentState, config: RunnableConfig) -> Dict[s
                 break
             except Exception as e:
                 last_err = e
-                if "503" in str(e) or "overloaded" in str(e).lower():
-                    time.sleep(2 ** attempt)
-                else:
+                print(f"[Refund Agent] Model {model_name} failed: {e}. Falling back...")
+                if attempt == 1:
                     break
         if response_msg:
             break

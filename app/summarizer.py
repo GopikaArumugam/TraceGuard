@@ -1,3 +1,4 @@
+import os
 import time
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -110,20 +111,19 @@ def generate_decision_summary(session_id: UUID, db: Session) -> str:
     # 6. Model pool routing logic
     model_pool = []
     if settings.GEMINI_API_KEY:
-        model_pool.append({
-            "model": "gemini/gemini-3.5-flash",
-            "api_key": settings.GEMINI_API_KEY
-        })
+        env_model = os.getenv("GEMINI_MODEL", "gemini/gemini-1.5-flash")
+        candidate_models = []
+        if env_model:
+            candidate_models.append(env_model)
+        for fb in ["gemini/gemini-1.5-flash", "gemini/gemini-2.0-flash", "gemini/gemini-3.5-flash"]:
+            if fb not in candidate_models:
+                candidate_models.append(fb)
+        for m in candidate_models:
+            model_pool.append({"model": m, "api_key": settings.GEMINI_API_KEY})
     if settings.GROQ_API_KEY:
-        model_pool.append({
-            "model": "groq/llama-3.1-8b-instant",
-            "api_key": settings.GROQ_API_KEY
-        })
+        model_pool.append({"model": "groq/llama-3.1-8b-instant", "api_key": settings.GROQ_API_KEY})
     if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "mock-key":
-        model_pool.append({
-            "model": "openai/gpt-4o-mini",
-            "api_key": settings.OPENAI_API_KEY
-        })
+        model_pool.append({"model": "openai/gpt-4o-mini", "api_key": settings.OPENAI_API_KEY})
 
     if not model_pool:
         raise ValueError("Strict Mode Active: No active LLM API keys configured.")
@@ -289,20 +289,19 @@ def generate_challenge_response(session_id: UUID, db: Session) -> str:
 
     model_pool = []
     if settings.GEMINI_API_KEY:
-        model_pool.append({
-            "model": "gemini/gemini-3.5-flash",
-            "api_key": settings.GEMINI_API_KEY
-        })
+        env_model = os.getenv("GEMINI_MODEL", "gemini/gemini-1.5-flash")
+        candidate_models = []
+        if env_model:
+            candidate_models.append(env_model)
+        for fb in ["gemini/gemini-1.5-flash", "gemini/gemini-2.0-flash", "gemini/gemini-3.5-flash"]:
+            if fb not in candidate_models:
+                candidate_models.append(fb)
+        for m in candidate_models:
+            model_pool.append({"model": m, "api_key": settings.GEMINI_API_KEY})
     if settings.GROQ_API_KEY:
-        model_pool.append({
-            "model": "groq/llama-3.1-8b-instant",
-            "api_key": settings.GROQ_API_KEY
-        })
+        model_pool.append({"model": "groq/llama-3.1-8b-instant", "api_key": settings.GROQ_API_KEY})
     if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "mock-key":
-        model_pool.append({
-            "model": "openai/gpt-4o-mini",
-            "api_key": settings.OPENAI_API_KEY
-        })
+        model_pool.append({"model": "openai/gpt-4o-mini", "api_key": settings.OPENAI_API_KEY})
 
     if not model_pool:
         raise ValueError("No active LLM API keys configured.")

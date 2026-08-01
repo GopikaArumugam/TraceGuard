@@ -176,7 +176,8 @@ def run_loan_agent(payload: LoanRequest, db: Session = Depends(get_db), api_key:
             "final_decision": "PENDING"
         }
         handler = AuditCallbackHandler(session_id=session_id)
-        config = {"callbacks": [handler], "configurable": {"llm_model": payload.llm_model or "gemini/gemini-3.5-flash"}}
+        target_llm = payload.llm_model or os.getenv("GEMINI_MODEL", "gemini/gemini-3.5-flash")
+        config = {"callbacks": [handler], "configurable": {"llm_model": target_llm}}
 
         try:
             result = hr_agent_executor.invoke(initial_state, config=config)
@@ -224,7 +225,8 @@ def run_loan_agent(payload: LoanRequest, db: Session = Depends(get_db), api_key:
             "final_decision": "PENDING"
         }
         handler = AuditCallbackHandler(session_id=session_id)
-        config = {"callbacks": [handler], "configurable": {"llm_model": payload.llm_model or "gemini/gemini-3.5-flash"}}
+        target_llm = payload.llm_model or os.getenv("GEMINI_MODEL", "gemini/gemini-3.5-flash")
+        config = {"callbacks": [handler], "configurable": {"llm_model": target_llm}}
 
         try:
             result = refund_agent_executor.invoke(initial_state, config=config)

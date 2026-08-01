@@ -666,7 +666,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Employee ID</label>
-                            <input type="text" id="hrEmployeeId" class="search-input" value="EMP-9921">
+                            <input type="text" id="hrEmployeeId" class="search-input" value="EMP-1001">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Leave Type</label>
@@ -688,11 +688,11 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Customer ID</label>
-                            <input type="text" id="refundCustomerId" class="search-input" value="usr_customer_88">
+                            <input type="text" id="refundCustomerId" class="search-input" value="CUST-5001">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Order ID</label>
-                            <input type="text" id="refundOrderId" class="search-input" value="ORD-55419">
+                            <input type="text" id="refundOrderId" class="search-input" value="ORD-9001">
                         </div>
                     </div>
                     <div class="form-group">
@@ -925,12 +925,14 @@
                 payload.hr_leave_type = document.getElementById('hrLeaveType').value;
                 payload.hr_leave_days = parseInt(document.getElementById('hrLeaveDays').value);
                 payload.requested_amount = parseFloat(payload.hr_leave_days);
+                payload.llm_model = document.getElementById('policyLLM').value;
             } else {
                 payload.user_id = document.getElementById('refundCustomerId').value.trim();
                 payload.refund_customer_id = document.getElementById('refundCustomerId').value.trim();
                 payload.refund_order_id = document.getElementById('refundOrderId').value.trim();
                 payload.refund_amount = parseFloat(document.getElementById('refundAmount').value);
                 payload.requested_amount = payload.refund_amount;
+                payload.llm_model = document.getElementById('policyLLM').value;
             }
 
             try {
@@ -948,9 +950,11 @@
                 const data = await response.json();
                 await fetchSessions();
                 
-                const items = document.querySelectorAll('.session-item');
-                if (items.length > 0) {
-                    selectSession(data.session_id, items[0]);
+                if (data && data.session_id) {
+                    const matchItem = document.querySelector(`.session-item[data-session-id="${data.session_id}"]`) || document.querySelectorAll('.session-item')[0];
+                    if (matchItem) {
+                        selectSession(data.session_id, matchItem);
+                    }
                 }
             } catch (err) {
                 console.error("Error running evaluation:", err);
@@ -993,6 +997,7 @@
             sessions.forEach(session => {
                 const li = document.createElement('li');
                 li.className = 'session-item';
+                li.setAttribute('data-session-id', session.session_id);
                 li.onclick = () => selectSession(session.session_id, li);
                 
                 const date = new Date(session.created_at).toLocaleString();
@@ -1010,6 +1015,10 @@
                 `;
                 list.appendChild(li);
             });
+
+            if (!activeSessionId && sessions.length > 0) {
+                selectSession(sessions[0].session_id, list.children[0]);
+            }
         }
 
         function formatMarkdownToHTML(text) {
@@ -1058,8 +1067,12 @@
         }
 
         async function selectSession(sessionId, element) {
+            if (!sessionId || sessionId === 'undefined') return;
+
             document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
+            if (element) {
+                element.classList.add('active');
+            }
 
             document.getElementById('placeholderScreen').style.display = 'none';
             document.getElementById('workspaceContent').style.display = 'flex';
