@@ -134,9 +134,13 @@ def generate_decision_summary(session_id: UUID, db: Session) -> str:
     for item in model_pool:
         model_name = item["model"]
         api_key = item["api_key"]
+        if not api_key:
+            continue
+            
+        if "gemini" in model_name and api_key:
+            os.environ["GEMINI_API_KEY"] = api_key
         
-        max_retries = 2
-        for attempt in range(max_retries):
+        for attempt in range(2):
             try:
                 response = completion(
                     model=model_name,
@@ -148,11 +152,8 @@ def generate_decision_summary(session_id: UUID, db: Session) -> str:
                 break
             except Exception as e:
                 last_err = e
-                if "503" in str(e) or "overloaded" in str(e).lower():
-                    wait_time = 2 ** attempt
-                    print(f"Warning: Summarizer model {model_name} failed ({str(e)}). Retrying in {wait_time}s...")
-                    time.sleep(wait_time)
-                else:
+                print(f"[Summarizer] Model {model_name} failed: {e}. Falling back...")
+                if attempt == 1:
                     break
         
         if explanation:
@@ -312,9 +313,13 @@ def generate_challenge_response(session_id: UUID, db: Session) -> str:
     for item in model_pool:
         model_name = item["model"]
         api_key = item["api_key"]
+        if not api_key:
+            continue
+            
+        if "gemini" in model_name and api_key:
+            os.environ["GEMINI_API_KEY"] = api_key
         
-        max_retries = 2
-        for attempt in range(max_retries):
+        for attempt in range(2):
             try:
                 response = completion(
                     model=model_name,
@@ -326,11 +331,8 @@ def generate_challenge_response(session_id: UUID, db: Session) -> str:
                 break
             except Exception as e:
                 last_err = e
-                if "503" in str(e) or "overloaded" in str(e).lower():
-                    wait_time = 2 ** attempt
-                    print(f"Warning: Model {model_name} failed in challenge generator ({str(e)}). Retrying in {wait_time}s...")
-                    time.sleep(wait_time)
-                else:
+                print(f"[Summarizer] Model {model_name} failed in challenge generator: {e}. Falling back...")
+                if attempt == 1:
                     break
         
         if letter:
