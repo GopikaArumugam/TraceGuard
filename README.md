@@ -228,17 +228,3 @@ Your Google AI Studio free tier quota for the selected Gemini model has been tem
 
 ---
 
-## 🔮 Roadmap & Future Scope
-
-- [ ] **PS-7.2 Cryptographic Log Hashing**: Add SHA-256 hash chains for stored `decision_steps` to detect log tampering.
-- [ ] **PS-5.1 Agent Web Application Firewall (WAF)**: Intercept tool calls to enforce real-time parameter validation and rate limiting.
-- [ ] **Data Subject Access Request (DSAR) Handler**: Automated export and erasure pipelines for customer audit records.
-- [ ] **Multi-Provider Failover**: Automatic routing to OpenAI/Anthropic fallback models upon Gemini rate limit detection.
-
----
-
-<div align="center">
-
-Made for **Enterprise AI Governance & Decision Transparency** • Powered by **LangGraph & Google Gemini**
-
-</div>
