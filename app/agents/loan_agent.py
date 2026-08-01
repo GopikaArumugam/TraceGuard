@@ -200,7 +200,9 @@ def agent_brain_node(state: AgentState, config: RunnableConfig) -> Dict[str, Any
         if not api_key:
             continue
             
-        max_retries = 2
+        if "gemini" in model_name and api_key:
+            os.environ["GEMINI_API_KEY"] = api_key
+
         for attempt in range(2):
             try:
                 response = completion(
