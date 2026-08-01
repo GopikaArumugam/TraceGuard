@@ -8,12 +8,23 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-Stateful_Agents-FF6F00.svg?style=flat&logo=python&logoColor=white)](https://python.langchain.com/)
 [![Gemini](https://img.shields.io/badge/LLM-Google_Gemini_3.5_Flash-4285F4.svg?style=flat&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live--Production-000000.svg?style=flat&logo=vercel&logoColor=white)](https://trace-guard-eta.vercel.app/)
+[![AWS EC2 Deployment](https://img.shields.io/badge/AWS_EC2-Live--Production-FF9900.svg?style=flat&logo=amazon-aws&logoColor=white)](http://13.49.68.207)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791.svg?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Architecture Overview](#-architecture) • [Key Features](#-key-features) • [Business Agents](#-enterprise-agents-suite) • [Quick Start](#-quick-start) • [AWS Deployment](#-aws-production-deployment) • [API Reference](#-api-documentation) • [Troubleshooting & FAQs](#-troubleshooting--faqs)
+[Live Deployments](#-live-production-deployments) • [Architecture Overview](#-architecture) • [Key Features](#-key-features) • [Business Agents](#-enterprise-agents-suite) • [Quick Start](#-quick-start) • [AWS Deployment](#-aws-production-deployment) • [API Reference](#-api-documentation) • [Troubleshooting & FAQs](#-troubleshooting--faqs)
 
 </div>
+
+---
+
+## 🌐 Live Production Deployments
+
+| Deployment Environment | Live URL | Status | Description |
+|---|---|---|---|
+| ⚡ **Vercel Production (HTTPS)** | [https://trace-guard-eta.vercel.app/](https://trace-guard-eta.vercel.app/) | `Active 🟢` | Serverless Vercel deployment with automatic SSL certificate encryption. |
+| ☁️ **AWS EC2 Cloud Server** | [http://13.49.68.207](http://13.49.68.207) | `Active 🟢` | Dedicated AWS EC2 Linux instance running FastAPI with PostgreSQL database integration (`audit_db`). |
 
 ---
 
